@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MFL Cup Rankings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --accent: #c9a84c;
+    --accent2: #7b5ea7;
+    --danger: #e05252;
+    --warning: #e09a3a;
+    --success: #4caf7d;
+
+    --titans: #ffd700;
+    --elite: #c084fc;
+    --contender: #60a5fa;
+    --challenger: #34d399;
+    --rivals: #fb923c;
+    --aspirants: #94a3b8;
+    --incomplete: #f87171;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(201,168,76,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(201,168,76,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .header {
+    position: relative;
+    z-index: 10;
+    padding: 40px 32px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    background: linear-gradient(180deg, rgba(201,168,76,0.06) 0%, transparent 100%);
+  }
+
+  .header-left h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .header-left p {
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-top: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .last-updated {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 6px;
+  }
+
+  .btn-update {
+    background: var(--accent);
+    color: #0a0a0f;
+    border: none;
+    padding: 10px 22px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.08em;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-update:hover:not(:disabled) {
+    background: #e0c060;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+  }
+
+  .btn-update:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Progress section */
+  .progress-wrap {
+    position: relative;
+    z-index: 10;
+    padding: 20px 32px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: none;
+  }
+
+  .progress-wrap.visible { display: block; }
+
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 0.8rem;
+  }
+
+  .progress-label {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+  }
+
+  .progress-stats {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    font-size: 0.72rem;
+  }
+
+  .progress-bar-track {
+    height: 6px;
+    background: var(--surface2);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 3px;
+    transition: width 0.3s ease;
+    width: 0%;
+    position: relative;
+  }
+
+  .progress-bar-fill::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 40px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3));
+    animation: shimmer 1s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { opacity: 0; }
+    50% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  .progress-sub {
+    margin-top: 8px;
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Error banner */
+  .error-banner {
+    display: none;
+    position: relative;
+    z-index: 10;
+    margin: 16px 32px;
+    padding: 12px 16px;
+    background: rgba(224,82,82,0.1);
+    border: 1px solid rgba(224,82,82,0.3);
+    border-radius: 8px;
+    font-size: 0.82rem;
+    color: var(--danger);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .error-banner.visible { display: block; }
+
+  /* Stats bar */
+  .stats-bar {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    gap: 24px;
+    padding: 16px 32px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .stat-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+  }
+
+  .stat-pill .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .stat-pill span { color: var(--muted); }
+  .stat-pill strong { font-family: 'JetBrains Mono', monospace; color: var(--text); }
+
+  /* Main content */
+  .content {
+    position: relative;
+    z-index: 10;
+    padding: 32px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--muted);
+  }
+
+  .empty-state .icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    opacity: 0.4;
+  }
+
+  .empty-state h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+    color: var(--text);
+    opacity: 0.4;
+  }
+
+  .empty-state p {
+    font-size: 0.85rem;
+    opacity: 0.6;
+  }
+
+  /* Cup sections */
+  .cup-section {
+    margin-bottom: 48px;
+    animation: fadeIn 0.4s ease forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .cup-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cup-badge {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid currentColor;
+  }
+
+  .cup-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    letter-spacing: 0.05em;
+  }
+
+  .cup-count {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    background: var(--surface2);
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  /* Team grid */
+  .team-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+  }
+
+  /* Team card */
+  .team-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .team-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--cup-color, var(--muted));
+    border-radius: 10px 0 0 10px;
+  }
+
+  .team-card:hover {
+    border-color: var(--cup-color, var(--border));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+
+  .team-rank {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    min-width: 28px;
+    text-align: center;
+  }
+
+  .team-color-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: white;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .team-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .team-name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text);
+  }
+
+  .team-meta {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 2px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .team-ovr {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.03em;
+    color: var(--cup-color, var(--text));
+    min-width: 50px;
+    text-align: right;
+  }
+
+  .team-ovr small {
+    display: block;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.62rem;
+    color: var(--muted);
+    letter-spacing: 0;
+    font-weight: 400;
+    margin-top: -4px;
+  }
+
+  .team-link {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .team-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  /* Flags */
+  .tag {
+    font-size: 0.62rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    display: inline-block;
+    margin-top: 3px;
+  }
+
+  .tag-partial {
+    background: rgba(224,154,58,0.15);
+    color: var(--warning);
+    border: 1px solid rgba(224,154,58,0.3);
+  }
+
+  /* Incomplete section */
+  .incomplete-section {
+    margin-top: 48px;
+    padding-top: 32px;
+    border-top: 2px dashed rgba(248,113,113,0.3);
+  }
+
+  .incomplete-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .incomplete-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 0.05em;
+    color: var(--incomplete);
+  }
+
+  .incomplete-desc {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .incomplete-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 10px;
+  }
+
+  .incomplete-card {
+    background: rgba(248,113,113,0.04);
+    border: 1px solid rgba(248,113,113,0.15);
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .incomplete-card .team-name {
+    font-size: 0.82rem;
+  }
+
+  .incomplete-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--incomplete);
+    background: rgba(248,113,113,0.1);
+    border: 1px solid rgba(248,113,113,0.2);
+    padding: 3px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    margin-left: auto;
+  }
+
+  /* Cup color helpers */
+  .cup-titans     { --cup-color: var(--titans); }
+  .cup-elite      { --cup-color: var(--elite); }
+  .cup-contender  { --cup-color: var(--contender); }
+  .cup-challenger { --cup-color: var(--challenger); }
+  .cup-rivals     { --cup-color: var(--rivals); }
+  .cup-aspirants  { --cup-color: var(--aspirants); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--surface); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .header, .content, .stats-bar { padding: 20px 16px; }
+    .progress-wrap { padding: 16px; }
+    .team-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <h1>MFL Cup Rankings</h1>
+    <p id="subtitle">Top-11 OVR Strength · All Clubs</p>
+  </div>
+  <div class="header-right">
+    <div class="last-updated" id="lastUpdated">Never updated</div>
+    <button class="btn-update" id="btnUpdate" onclick="startUpdate()">
+      <span>⟳</span> Update Squads
+    </button>
+  </div>
+</header>
+
+<div class="progress-wrap" id="progressWrap">
+  <div class="progress-info">
+    <span class="progress-label" id="progressLabel">Fetching squads…</span>
+    <span class="progress-stats" id="progressStats">0 / 0</span>
+  </div>
+  <div class="progress-bar-track">
+    <div class="progress-bar-fill" id="progressFill"></div>
+  </div>
+  <div class="progress-sub" id="progressSub">Estimating time…</div>
+</div>
+
+<div class="error-banner" id="errorBanner"></div>
+
+<div class="stats-bar" id="statsBar" style="display:none;">
+  <div class="stat-pill">
+    <div class="dot" style="background:var(--accent)"></div>
+    <span>Total clubs:</span>
+    <strong id="statTotal">—</strong>
+  </div>
+  <div class="stat-pill">
+    <div class="dot" style="background:var(--success)"></div>
+    <span>Ranked:</span>
+    <strong id="statRanked">—</strong>
+  </div>
+  <div class="stat-pill">
+    <div class="dot" style="background:var(--warning)"></div>
+    <span>Partial squads:</span>
+    <strong id="statPartial">—</strong>
+  </div>
+  <div class="stat-pill">
+    <div class="dot" style="background:var(--danger)"></div>
+    <span>Incomplete:</span>
+    <strong id="statIncomplete">—</strong>
+  </div>
+  <div class="stat-pill">
+    <div class="dot" style="background:var(--muted)"></div>
+    <span>Failed:</span>
+    <strong id="statFailed">—</strong>
+  </div>
+</div>
+
+<div class="content" id="emptyState">
+  <div class="empty-state">
+    <div class="icon">⚽</div>
+    <h2>No Data Yet</h2>
+    <p>Click "Update Squads" to fetch and rank all clubs.</p>
+  </div>
+</div>
+<main class="content" id="mainContent"></main>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const DIVISIONS = [1,2,3,4,5,6,7,8,9,10];
+
+const CUP_TIERS = [
+  { name: 'Titans',       cls: 'cup-titans',     size: 32 },
+  { name: 'Elite 1',      cls: 'cup-elite',      size: 32 },
+  { name: 'Elite 2',      cls: 'cup-elite',      size: 32 },
+  { name: 'Contender 1',  cls: 'cup-contender',  size: 32 },
+  { name: 'Contender 2',  cls: 'cup-contender',  size: 32 },
+  { name: 'Contender 3',  cls: 'cup-contender',  size: 32 },
+  { name: 'Contender 4',  cls: 'cup-contender',  size: 32 },
+  { name: 'Challenger 1', cls: 'cup-challenger', size: 32 },
+  { name: 'Challenger 2', cls: 'cup-challenger', size: 32 },
+  { name: 'Challenger 3', cls: 'cup-challenger', size: 32 },
+  { name: 'Challenger 4', cls: 'cup-challenger', size: 32 },
+  { name: 'Challenger 5', cls: 'cup-challenger', size: 32 },
+  { name: 'Challenger 6', cls: 'cup-challenger', size: 32 },
+  { name: 'Challenger 7', cls: 'cup-challenger', size: 32 },
+  { name: 'Challenger 8', cls: 'cup-challenger', size: 32 },
+  { name: 'Rivals 1',     cls: 'cup-rivals',     size: 32 },
+  { name: 'Rivals 2',     cls: 'cup-rivals',     size: 32 },
+  { name: 'Rivals 3',     cls: 'cup-rivals',     size: 32 },
+  { name: 'Rivals 4',     cls: 'cup-rivals',     size: 32 },
+  { name: 'Rivals 5',     cls: 'cup-rivals',     size: 32 },
+  { name: 'Rivals 6',     cls: 'cup-rivals',     size: 32 },
+  { name: 'Rivals 7',     cls: 'cup-rivals',     size: 32 },
+  { name: 'Rivals 8',     cls: 'cup-rivals',     size: 32 },
+  { name: 'Rivals 9',     cls: 'cup-rivals',     size: 32 },
+  { name: 'Rivals 10',    cls: 'cup-rivals',     size: 32 },
+  { name: 'Rivals 11',    cls: 'cup-rivals',     size: 32 },
+  { name: 'Rivals 12',    cls: 'cup-rivals',     size: 32 },
+  { name: 'Rivals 13',    cls: 'cup-rivals',     size: 32 },
+  { name: 'Rivals 14',    cls: 'cup-rivals',     size: 32 },
+  { name: 'Rivals 15',    cls: 'cup-rivals',     size: 32 },
+  { name: 'Rivals 16',    cls: 'cup-rivals',     size: 32 },
+  // Aspirants fills the rest — handled dynamically
+];
+
+const API_BASE = 'https://z519wdyajg.execute-api.us-east-1.amazonaws.com/prod';
+const DELAY_MS = 80;
+const COOLDOWN_403_MS = 60000;
+const ROTATE_EVERY = 25;
+const STORAGE_KEY = 'mfl_cup_rankings_v1';
+
+// Rotating UA headers
+const HEADER_SETS = [
+  { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36', 'Accept': 'application/json', 'Referer': 'https://app.playmfl.com/', 'Origin': 'https://app.playmfl.com' },
+  { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/119.0.0.0 Safari/537.36', 'Accept': 'application/json', 'Referer': 'https://app.playmfl.com/', 'Origin': 'https://app.playmfl.com' },
+  { 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/118.0.0.0 Safari/537.36', 'Accept': 'application/json', 'Referer': 'https://app.playmfl.com/', 'Origin': 'https://app.playmfl.com' },
+  { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0', 'Accept': 'application/json', 'Referer': 'https://app.playmfl.com/', 'Origin': 'https://app.playmfl.com' },
+  { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.1 Safari/605.1.15', 'Accept': 'application/json', 'Referer': 'https://app.playmfl.com/', 'Origin': 'https://app.playmfl.com' },
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let requestCount = 0;
+let isRunning = false;
+let startTime = null;
+let completedCount = 0;
+let failedCount = 0;
+
+// ============================================================
+// UTILS
+// ============================================================
+function getHeaders() {
+  return HEADER_SETS[Math.floor(requestCount / ROTATE_EVERY) % HEADER_SETS.length];
+}
+
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+function top11OVR(players) {
+  const overalls = players.map(p => p.metadata?.overall || 0);
+  overalls.sort((a, b) => b - a);
+  return overalls.slice(0, 11).reduce((s, v) => s + v, 0);
+}
+
+function initials(name) {
+  return name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function formatTime(ms) {
+  if (ms < 60000) return `${Math.round(ms / 1000)}s`;
+  return `${Math.floor(ms / 60000)}m ${Math.round((ms % 60000) / 1000)}s`;
+}
+
+// ============================================================
+// FETCH A SINGLE CLUB
+// ============================================================
+async function fetchClub(clubId) {
+  requestCount++;
+  const res = await fetch(`${API_BASE}/clubs/${clubId}/players`, {
+    headers: getHeaders()
+  });
+
+  if (res.status === 403) {
+    throw new Error('403');
+  }
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}`);
+  }
+
+  const players = await res.json();
+  return players;
+}
+
+// ============================================================
+// FETCH CLUB IDS FROM LEADERBOARDS
+// ============================================================
+async function fetchAllClubIds() {
+  const clubIds = new Set();
+  const COOLDOWNS = [90000, 120000, 180000];
+
+  for (let d = 0; d < DIVISIONS.length; d++) {
+    const div = DIVISIONS[d];
+    updateProgress(d, DIVISIONS.length, `Loading division ${div} leaderboard…`, null);
+
+    let attempt = 0;
+    let success = false;
+
+    while (attempt <= 3 && !success) {
+      try {
+        requestCount++;
+        const res = await fetch(
+          `${API_BASE}/leaderboards/clubs/global?division=${div}&sort=nbMflPoints&sortOrder=DESC&limit=20000`,
+          { headers: getHeaders() }
+        );
+
+        if (res.status === 403) {
+          throw new Error('403');
+        }
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        const found = data.clubs || [];
+        found.forEach(c => clubIds.add(c.id));
+        updateProgressLabel(`Division ${div}: ${found.length} clubs found (${clubIds.size} total so far)`);
+        await sleep(DELAY_MS);
+        success = true;
+
+      } catch (err) {
+        if (err.message === '403') {
+          if (attempt < 3) {
+            const cooldown = COOLDOWNS[attempt] || 180000;
+            showError(`⚠️ Rate limited on division ${div} leaderboard — attempt ${attempt + 1}/3. Cooling down ${cooldown / 1000}s…`);
+            await sleep(cooldown);
+            hideError();
+            attempt++;
+          } else {
+            showError(`⚠️ Division ${div} leaderboard failed after 3 retries — skipping.`);
+            await sleep(2000);
+            hideError();
+            success = true;
+          }
+        } else {
+          showError(`⚠️ Failed to fetch division ${div} leaderboard: ${err.message}`);
+          await sleep(1000);
+          hideError();
+          success = true; // don't retry non-403 errors
+        }
+      }
+    }
+  }
+
+  return [...clubIds];
+}
+
+// ============================================================
+// MAIN UPDATE FLOW
+// ============================================================
+async function startUpdate() {
+  if (isRunning) return;
+  isRunning = true;
+  requestCount = 0;
+  completedCount = 0;
+  failedCount = 0;
+  startTime = Date.now();
+
+  const btn = document.getElementById('btnUpdate');
+  btn.disabled = true;
+  btn.innerHTML = '<span>⟳</span> Fetching…';
+
+  document.getElementById('progressWrap').classList.add('visible');
+  document.getElementById('mainContent').innerHTML = '';
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('errorBanner').classList.remove('visible');
+  document.getElementById('statsBar').style.display = 'none';
+  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById('progressStats').textContent = '0 / 0';
+  document.getElementById('progressSub').textContent = 'Loading leaderboards…';
+
+  // Step 1: gather all club IDs from leaderboards
+  updateProgress(0, DIVISIONS.length, 'Loading leaderboards… (0/10)', null);
+  const CLUB_IDS = await fetchAllClubIds();
+  document.getElementById('subtitle').textContent = `Top-11 OVR Strength · ${CLUB_IDS.length} clubs across ${DIVISIONS.length} divisions`;
+
+  if (CLUB_IDS.length === 0) {
+    showError('⚠️ No club IDs found from leaderboards. API may be unavailable.');
+    document.getElementById('progressWrap').classList.remove('visible');
+    btn.disabled = false;
+    btn.innerHTML = '<span>⟳</span> Update Squads';
+    isRunning = false;
+    return;
+  }
+
+  const results = [];
+  const failed = [];
+  const total = CLUB_IDS.length;
+
+  updateProgress(0, total, `Starting — ${total} clubs to fetch…`, null);
+
+  for (let i = 0; i < CLUB_IDS.length; i++) {
+    const clubId = CLUB_IDS[i];
+
+    // Proactive pause every 150 requests
+    if (requestCount > 0 && requestCount % 150 === 0) {
+      updateProgressLabel(`⏸ Pausing to avoid rate limits… resuming in 30s`);
+      await sleep(30000);
+    }
+
+    const MAX_RETRIES = 3;
+    const COOLDOWNS = [90000, 120000, 180000]; // escalating: 90s, 120s, 180s
+    let attempt = 0;
+    let success = false;
+
+    while (attempt <= MAX_RETRIES && !success) {
+      try {
+        const players = await fetchClub(clubId);
+        await sleep(DELAY_MS);
+
+        if (!Array.isArray(players) || players.length === 0) {
+          results.push({ clubId, clubName: `Club ${clubId}`, mainColor: '#333', secondaryColor: '#555', division: null, playerCount: 0, top11: 0 });
+        } else {
+          const clubName = players[0]?.activeContract?.club?.name || `Club ${clubId}`;
+          const mainColor = players[0]?.activeContract?.club?.mainColor || '#333';
+          const secondaryColor = players[0]?.activeContract?.club?.secondaryColor || '#555';
+          const division = players[0]?.activeContract?.club?.division || null;
+          const playerCount = players.length;
+          const top11 = top11OVR(players);
+          results.push({ clubId, clubName, mainColor, secondaryColor, division, playerCount, top11 });
+        }
+        completedCount++;
+        success = true;
+
+      } catch (err) {
+        if (err.message === '403') {
+          if (attempt < MAX_RETRIES) {
+            const cooldown = COOLDOWNS[attempt] || 180000;
+            const cooldownSecs = cooldown / 1000;
+            showError(`⚠️ Rate limited at club ${clubId} — attempt ${attempt + 1}/${MAX_RETRIES}. Cooling down ${cooldownSecs}s…`);
+            await sleep(cooldown);
+            hideError();
+            attempt++;
+          } else {
+            // All retries exhausted
+            failed.push(clubId);
+            failedCount++;
+            success = true; // exit loop
+          }
+        } else {
+          // Non-403 error — don't retry
+          failed.push(clubId);
+          failedCount++;
+          success = true; // exit loop
+        }
+      }
+    }
+
+    const elapsed = Date.now() - startTime;
+    const done = i + 1;
+    const rate = elapsed / done;
+    const remaining = (total - done) * rate;
+    updateProgress(done, total, `Club ${clubId} — ${done}/${total} fetched`, remaining);
+  }
+
+  // Done — assign tiers and render
+  document.getElementById('progressWrap').classList.remove('visible');
+  renderRankings(results, failed);
+
+  // Save to localStorage
+  const snapshot = {
+    updatedAt: new Date().toISOString(),
+    results: results.map(r => ({ clubId: r.clubId, clubName: r.clubName, mainColor: r.mainColor, secondaryColor: r.secondaryColor, division: r.division, playerCount: r.playerCount, top11: r.top11 })),
+    failed
+  };
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot)); } catch(e) {}
+
+  updateLastUpdated(snapshot.updatedAt);
+
+  btn.disabled = false;
+  btn.innerHTML = '<span>⟳</span> Update Squads';
+  isRunning = false;
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function assignTiers(rankedClubs) {
+  // rankedClubs sorted desc by top11
+  const tiers = [];
+  let offset = 0;
+  let aspirantNum = 1;
+
+  for (const tier of CUP_TIERS) {
+    const slice = rankedClubs.slice(offset, offset + tier.size);
+    if (slice.length === 0) break;
+    tiers.push({ ...tier, clubs: slice });
+    offset += tier.size;
+  }
+
+  // Aspirants — all remaining, split into groups of 32
+  const remaining = rankedClubs.slice(offset);
+  for (let i = 0; i < remaining.length; i += 32) {
+    const slice = remaining.slice(i, i + 32);
+    if (slice.length === 0) break;
+    tiers.push({
+      name: remaining.length <= 32 ? 'Aspirants' : `Aspirants ${aspirantNum}`,
+      cls: 'cup-aspirants',
+      clubs: slice
+    });
+    aspirantNum++;
+  }
+
+  return tiers;
+}
+
+function renderRankings(results, failed) {
+  const ranked = results.filter(r => r.playerCount >= 16);
+  const partial = results.filter(r => r.playerCount >= 11 && r.playerCount <= 15);
+  const incomplete = results.filter(r => r.playerCount <= 10);
+
+  // Sort ranked + partial together by top11 desc, then split into tiers
+  // Partial squads included in rankings but flagged
+  const allRanked = [...ranked, ...partial].sort((a, b) => b.top11 - a.top11);
+
+  const tiers = assignTiers(allRanked);
+
+  // Stats
+  document.getElementById('statTotal').textContent = results.length;
+  document.getElementById('statRanked').textContent = allRanked.length;
+  document.getElementById('statPartial').textContent = partial.length;
+  document.getElementById('statIncomplete').textContent = incomplete.length;
+  document.getElementById('statFailed').textContent = failed.length;
+  document.getElementById('statsBar').style.display = 'flex';
+
+  const main = document.getElementById('mainContent');
+  main.innerHTML = '';
+
+  // Global rank counter
+  let globalRank = 1;
+
+  // Render cup tiers
+  for (const tier of tiers) {
+    const section = document.createElement('div');
+    section.className = `cup-section`;
+
+    const header = document.createElement('div');
+    header.className = 'cup-header';
+    header.innerHTML = `
+      <span class="cup-badge ${tier.cls}" style="color:var(--cup-color)">${tier.name.split(' ')[0].toUpperCase()}</span>
+      <span class="cup-name ${tier.cls}" style="color:var(--cup-color)">${tier.name}</span>
+      <span class="cup-count">${tier.clubs.length} clubs</span>
+    `;
+    section.appendChild(header);
+
+    const grid = document.createElement('div');
+    grid.className = 'team-grid';
+
+    for (const club of tier.clubs) {
+      const isPartial = club.playerCount >= 11 && club.playerCount <= 15;
+      const card = document.createElement('div');
+      card.className = `team-card ${tier.cls}`;
+      card.innerHTML = `
+        <span class="team-rank">#${globalRank}</span>
+        <a href="https://app.playmfl.com/clubs/${club.clubId}/squad" target="_blank" rel="noopener" class="team-color-swatch" style="background:${club.mainColor};border:2px solid ${club.secondaryColor};text-decoration:none;" title="View squad">${initials(club.clubName)}</a>
+        <div class="team-info">
+          <a href="https://app.playmfl.com/clubs/${club.clubId}/squad" target="_blank" rel="noopener" class="team-name team-link">${club.clubName}</a>
+          <div class="team-meta">Div ${club.division} · ${club.playerCount} players</div>
+          ${isPartial ? '<span class="tag tag-partial">⚠ PARTIAL SQUAD</span>' : ''}
+        </div>
+        <div class="team-ovr" style="color:var(--cup-color)">${club.top11}<small>TOP-11 OVR</small></div>
+      `;
+      grid.appendChild(card);
+      globalRank++;
+    }
+
+    section.appendChild(grid);
+    main.appendChild(section);
+  }
+
+  // Incomplete squads section
+  if (incomplete.length > 0) {
+    const section = document.createElement('div');
+    section.className = 'incomplete-section';
+    section.innerHTML = `
+      <div class="incomplete-header">
+        <span class="incomplete-title">⚠ Incomplete Squads</span>
+      </div>
+      <p class="incomplete-desc" style="margin-bottom:16px;font-size:0.8rem;color:var(--muted)">These clubs have 10 or fewer players and cannot be ranked.</p>
+    `;
+    const grid = document.createElement('div');
+    grid.className = 'incomplete-grid';
+    for (const club of incomplete.sort((a, b) => b.playerCount - a.playerCount)) {
+      const card = document.createElement('div');
+      card.className = 'incomplete-card';
+      card.innerHTML = `
+        <a href="https://app.playmfl.com/clubs/${club.clubId}/squad" target="_blank" rel="noopener" class="team-color-swatch" style="background:${club.mainColor};border:2px solid ${club.secondaryColor};width:28px;height:28px;font-size:0.55rem;text-decoration:none;" title="View squad">${initials(club.clubName)}</a>
+        <div class="team-info">
+          <a href="https://app.playmfl.com/clubs/${club.clubId}/squad" target="_blank" rel="noopener" class="team-name team-link">${club.clubName}</a>
+          <div class="team-meta">Div ${club.division}</div>
+        </div>
+        <span class="incomplete-badge">${club.playerCount} players</span>
+      `;
+      grid.appendChild(card);
+    }
+    section.appendChild(grid);
+    main.appendChild(section);
+  }
+
+  // Failed clubs
+  if (failed.length > 0) {
+    const section = document.createElement('div');
+    section.style.cssText = 'margin-top:32px;padding:16px;background:rgba(224,82,82,0.05);border:1px solid rgba(224,82,82,0.15);border-radius:10px;';
+    section.innerHTML = `
+      <p style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--danger);letter-spacing:0.05em;margin-bottom:8px;">⚠ Failed to fetch (${failed.length})</p>
+      <p style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--muted)">Club IDs: ${failed.join(', ')}</p>
+    `;
+    main.appendChild(section);
+  }
+}
+
+// ============================================================
+// PROGRESS HELPERS
+// ============================================================
+function updateProgress(done, total, label, remainingMs) {
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = label;
+  document.getElementById('progressStats').textContent = `${done} / ${total} (${pct}%)`;
+  if (remainingMs !== null) {
+    document.getElementById('progressSub').textContent = remainingMs > 0
+      ? `Est. remaining: ${formatTime(remainingMs)}`
+      : 'Almost done…';
+  }
+}
+
+function updateProgressLabel(text) {
+  document.getElementById('progressLabel').textContent = text;
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorBanner');
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+
+function hideError() {
+  document.getElementById('errorBanner').classList.remove('visible');
+}
+
+function updateLastUpdated(iso) {
+  const d = new Date(iso);
+  document.getElementById('lastUpdated').textContent = `Updated: ${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
+}
+
+// ============================================================
+// LOAD FROM CACHE ON PAGE LOAD
+// ============================================================
+(function loadCache() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const snap = JSON.parse(raw);
+    if (!snap.results) return;
+
+    updateLastUpdated(snap.updatedAt);
+    document.getElementById('emptyState').style.display = 'none';
+    renderRankings(snap.results, snap.failed || []);
+  } catch(e) {
+    // ignore corrupt cache
+  }
+})();
+</script>
+</body>
+</html>
