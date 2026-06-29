@@ -3,653 +3,259 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MFL Cup Rankings</title>
+<title>MFL Rankings</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  :root {
-    --bg: #0a0a0f;
-    --surface: #111118;
-    --surface2: #1a1a24;
-    --border: #2a2a3a;
-    --text: #e8e8f0;
-    --muted: #6b6b80;
-    --accent: #c9a84c;
-    --accent2: #7b5ea7;
-    --danger: #e05252;
-    --warning: #e09a3a;
-    --success: #4caf7d;
-
-    --titans: #ffd700;
-    --elite: #c084fc;
-    --contender: #60a5fa;
-    --challenger: #34d399;
-    --rivals: #fb923c;
-    --aspirants: #94a3b8;
-    --incomplete: #f87171;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* Background grid */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(201,168,76,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(201,168,76,0.03) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .header {
-    position: relative;
-    z-index: 10;
-    padding: 40px 32px 24px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    flex-wrap: wrap;
-    background: linear-gradient(180deg, rgba(201,168,76,0.06) 0%, transparent 100%);
-  }
-
-  .header-left h1 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(2rem, 5vw, 3.5rem);
-    letter-spacing: 0.05em;
-    color: var(--accent);
-    line-height: 1;
-  }
-
-  .header-left p {
-    color: var(--muted);
-    font-size: 0.8rem;
-    margin-top: 6px;
-    font-family: 'JetBrains Mono', monospace;
-  }
-
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-
-  .last-updated {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.72rem;
-    color: var(--muted);
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    padding: 6px 12px;
-    border-radius: 6px;
-  }
-
-  .btn-update {
-    background: var(--accent);
-    color: #0a0a0f;
-    border: none;
-    padding: 10px 22px;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1rem;
-    letter-spacing: 0.08em;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.15s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .btn-update:hover:not(:disabled) {
-    background: #e0c060;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 20px rgba(201,168,76,0.3);
-  }
-
-  .btn-update:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  /* Progress section */
-  .progress-wrap {
-    position: relative;
-    z-index: 10;
-    padding: 20px 32px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    display: none;
-  }
-
-  .progress-wrap.visible { display: block; }
-
-  .progress-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    font-size: 0.8rem;
-  }
-
-  .progress-label {
-    font-family: 'JetBrains Mono', monospace;
-    color: var(--accent);
-  }
-
-  .progress-stats {
-    font-family: 'JetBrains Mono', monospace;
-    color: var(--muted);
-    font-size: 0.72rem;
-  }
-
-  .progress-bar-track {
-    height: 6px;
-    background: var(--surface2);
-    border-radius: 3px;
-    overflow: hidden;
-    position: relative;
-  }
-
-  .progress-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent2), var(--accent));
-    border-radius: 3px;
-    transition: width 0.3s ease;
-    width: 0%;
-    position: relative;
-  }
-
-  .progress-bar-fill::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 0;
-    height: 100%;
-    width: 40px;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3));
-    animation: shimmer 1s infinite;
-  }
-
-  @keyframes shimmer {
-    0% { opacity: 0; }
-    50% { opacity: 1; }
-    100% { opacity: 0; }
-  }
-
-  .progress-sub {
-    margin-top: 8px;
-    font-size: 0.72rem;
-    color: var(--muted);
-    font-family: 'JetBrains Mono', monospace;
-  }
-
-  /* Error banner */
-  .error-banner {
-    display: none;
-    position: relative;
-    z-index: 10;
-    margin: 16px 32px;
-    padding: 12px 16px;
-    background: rgba(224,82,82,0.1);
-    border: 1px solid rgba(224,82,82,0.3);
-    border-radius: 8px;
-    font-size: 0.82rem;
-    color: var(--danger);
-    font-family: 'JetBrains Mono', monospace;
-  }
-
-  .error-banner.visible { display: block; }
-
-  /* Stats bar */
-  .stats-bar {
-    position: relative;
-    z-index: 10;
-    display: flex;
-    gap: 24px;
-    padding: 16px 32px;
-    border-bottom: 1px solid var(--border);
-    flex-wrap: wrap;
-  }
-
-  .stat-pill {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.78rem;
-  }
-
-  .stat-pill .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-  }
-
-  .stat-pill span { color: var(--muted); }
-  .stat-pill strong { font-family: 'JetBrains Mono', monospace; color: var(--text); }
-
-  /* Main content */
-  .content {
-    position: relative;
-    z-index: 10;
-    padding: 32px;
-    max-width: 1600px;
-    margin: 0 auto;
-  }
-
-  /* Empty state */
-  .empty-state {
-    text-align: center;
-    padding: 80px 20px;
-    color: var(--muted);
-  }
-
-  .empty-state .icon {
-    font-size: 3rem;
-    margin-bottom: 16px;
-    opacity: 0.4;
-  }
-
-  .empty-state h2 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.8rem;
-    letter-spacing: 0.05em;
-    margin-bottom: 8px;
-    color: var(--text);
-    opacity: 0.4;
-  }
-
-  .empty-state p {
-    font-size: 0.85rem;
-    opacity: 0.6;
-  }
-
-  /* Cup sections */
-  .cup-section {
-    margin-bottom: 48px;
-    animation: fadeIn 0.4s ease forwards;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .cup-header {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .cup-badge {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 0.7rem;
-    letter-spacing: 0.12em;
-    padding: 4px 10px;
-    border-radius: 4px;
-    border: 1px solid currentColor;
-  }
-
-  .cup-name {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.6rem;
-    letter-spacing: 0.05em;
-  }
-
-  .cup-count {
-    margin-left: auto;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-    color: var(--muted);
-    background: var(--surface2);
-    padding: 4px 10px;
-    border-radius: 4px;
-    border: 1px solid var(--border);
-  }
-
-  /* Team grid */
-  .team-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 12px;
-  }
-
-  /* Team card */
-  .team-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px 18px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    transition: all 0.2s;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .team-card::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background: var(--cup-color, var(--muted));
-    border-radius: 10px 0 0 10px;
-  }
-
-  .team-card:hover {
-    border-color: var(--cup-color, var(--border));
-    transform: translateY(-1px);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  }
-
-  .team-rank {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.72rem;
-    color: var(--muted);
-    min-width: 28px;
-    text-align: center;
-  }
-
-  .team-color-swatch {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.6rem;
-    font-weight: 600;
-    color: white;
-    font-family: 'JetBrains Mono', monospace;
-  }
-
-  .team-info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .team-name {
-    font-size: 0.88rem;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    color: var(--text);
-  }
-
-  .team-meta {
-    font-size: 0.72rem;
-    color: var(--muted);
-    margin-top: 2px;
-    font-family: 'JetBrains Mono', monospace;
-  }
-
-  .team-ovr {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.5rem;
-    letter-spacing: 0.03em;
-    color: var(--cup-color, var(--text));
-    min-width: 50px;
-    text-align: right;
-  }
-
-  .team-ovr small {
-    display: block;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.62rem;
-    color: var(--muted);
-    letter-spacing: 0;
-    font-weight: 400;
-    margin-top: -4px;
-  }
-
-  .team-link {
-    color: inherit;
-    text-decoration: none;
-  }
-
-  .team-link:hover {
-    text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-
-  /* Flags */
-  .tag {
-    font-size: 0.62rem;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    display: inline-block;
-    margin-top: 3px;
-  }
-
-  .tag-partial {
-    background: rgba(224,154,58,0.15);
-    color: var(--warning);
-    border: 1px solid rgba(224,154,58,0.3);
-  }
-
-  /* Incomplete section */
-  .incomplete-section {
-    margin-top: 48px;
-    padding-top: 32px;
-    border-top: 2px dashed rgba(248,113,113,0.3);
-  }
-
-  .incomplete-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-
-  .incomplete-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.4rem;
-    letter-spacing: 0.05em;
-    color: var(--incomplete);
-  }
-
-  .incomplete-desc {
-    font-size: 0.78rem;
-    color: var(--muted);
-  }
-
-  .incomplete-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 10px;
-  }
-
-  .incomplete-card {
-    background: rgba(248,113,113,0.04);
-    border: 1px solid rgba(248,113,113,0.15);
-    border-radius: 8px;
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .incomplete-card .team-name {
-    font-size: 0.82rem;
-  }
-
-  .incomplete-badge {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.7rem;
-    color: var(--incomplete);
-    background: rgba(248,113,113,0.1);
-    border: 1px solid rgba(248,113,113,0.2);
-    padding: 3px 8px;
-    border-radius: 4px;
-    white-space: nowrap;
-    margin-left: auto;
-  }
-
-  /* Cup color helpers */
-  .cup-titans     { --cup-color: var(--titans); }
-  .cup-elite      { --cup-color: var(--elite); }
-  .cup-contender  { --cup-color: var(--contender); }
-  .cup-challenger { --cup-color: var(--challenger); }
-  .cup-rivals     { --cup-color: var(--rivals); }
-  .cup-aspirants  { --cup-color: var(--aspirants); }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: var(--surface); }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-
-  /* Responsive */
-  @media (max-width: 600px) {
-    .header, .content, .stats-bar { padding: 20px 16px; }
-    .progress-wrap { padding: 16px; }
-    .team-grid { grid-template-columns: 1fr; }
-  }
+:root {
+  --bg: #0a0a0f;
+  --surface: #111118;
+  --surface2: #1a1a24;
+  --border: #2a2a3a;
+  --text: #e8e8f0;
+  --muted: #6b6b80;
+  --accent: #c9a84c;
+  --accent2: #7b5ea7;
+  --danger: #e05252;
+  --warning: #e09a3a;
+  --success: #4caf7d;
+  --titans: #ffd700;
+  --elite: #c084fc;
+  --contender: #60a5fa;
+  --challenger: #34d399;
+  --rivals: #fb923c;
+  --aspirants: #94a3b8;
+  --incomplete: #f87171;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; overflow-x:hidden; }
+body::before { content:''; position:fixed; inset:0; background-image:linear-gradient(rgba(201,168,76,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(201,168,76,0.03) 1px,transparent 1px); background-size:40px 40px; pointer-events:none; z-index:0; }
+
+.header { position:relative; z-index:10; padding:28px 32px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; background:linear-gradient(180deg,rgba(201,168,76,0.06) 0%,transparent 100%); }
+.header-left h1 { font-family:'Bebas Neue',sans-serif; font-size:clamp(1.8rem,4vw,3rem); letter-spacing:0.05em; color:var(--accent); line-height:1; }
+.header-left p { color:var(--muted); font-size:0.75rem; margin-top:4px; font-family:'JetBrains Mono',monospace; }
+.header-right { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.last-updated { font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:var(--muted); background:var(--surface2); border:1px solid var(--border); padding:5px 10px; border-radius:6px; }
+.btn { border:none; padding:9px 18px; font-family:'Bebas Neue',sans-serif; font-size:0.95rem; letter-spacing:0.08em; border-radius:6px; cursor:pointer; transition:all 0.15s; display:inline-flex; align-items:center; gap:6px; }
+.btn-primary { background:var(--accent); color:#0a0a0f; }
+.btn-primary:hover:not(:disabled) { background:#e0c060; transform:translateY(-1px); box-shadow:0 4px 20px rgba(201,168,76,0.3); }
+.btn-secondary { background:var(--surface2); color:var(--text); border:1px solid var(--border); font-size:0.78rem; padding:6px 12px; }
+.btn-secondary:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); }
+.btn:disabled { opacity:0.45; cursor:not-allowed; transform:none !important; box-shadow:none !important; }
+
+.tabs-wrap { position:relative; z-index:10; border-bottom:1px solid var(--border); background:var(--surface); display:flex; overflow-x:auto; }
+.tab-btn { font-family:'Bebas Neue',sans-serif; font-size:1rem; letter-spacing:0.06em; padding:14px 26px; background:none; border:none; color:var(--muted); cursor:pointer; border-bottom:3px solid transparent; transition:all 0.15s; white-space:nowrap; }
+.tab-btn:hover { color:var(--text); }
+.tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+.progress-wrap { position:relative; z-index:10; padding:16px 32px; background:var(--surface); border-bottom:1px solid var(--border); display:none; }
+.progress-wrap.visible { display:block; }
+.progress-info { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:0.78rem; }
+.progress-label { font-family:'JetBrains Mono',monospace; color:var(--accent); }
+.progress-stats { font-family:'JetBrains Mono',monospace; color:var(--muted); font-size:0.7rem; }
+.progress-bar-track { height:5px; background:var(--surface2); border-radius:3px; overflow:hidden; }
+.progress-bar-fill { height:100%; background:linear-gradient(90deg,var(--accent2),var(--accent)); border-radius:3px; transition:width 0.3s ease; width:0%; }
+.progress-sub { margin-top:6px; font-size:0.7rem; color:var(--muted); font-family:'JetBrains Mono',monospace; }
+
+.error-banner { display:none; position:relative; z-index:10; margin:12px 32px; padding:10px 14px; background:rgba(224,82,82,0.1); border:1px solid rgba(224,82,82,0.3); border-radius:8px; font-size:0.8rem; color:var(--danger); font-family:'JetBrains Mono',monospace; }
+.error-banner.visible { display:block; }
+
+.stats-bar { position:relative; z-index:10; display:flex; gap:20px; padding:12px 32px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+.stat-pill { display:flex; align-items:center; gap:6px; font-size:0.75rem; }
+.stat-pill .dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.stat-pill span { color:var(--muted); }
+.stat-pill strong { font-family:'JetBrains Mono',monospace; color:var(--text); }
+
+.content { position:relative; z-index:10; padding:28px 32px; max-width:1600px; margin:0 auto; }
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+
+.empty-state { text-align:center; padding:80px 20px; color:var(--muted); }
+.empty-state .icon { font-size:3rem; margin-bottom:16px; opacity:0.4; }
+.empty-state h2 { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; letter-spacing:0.05em; margin-bottom:8px; color:var(--text); opacity:0.4; }
+.empty-state p { font-size:0.85rem; opacity:0.6; }
+
+/* CUP */
+.cup-section { margin-bottom:40px; animation:fadeIn 0.35s ease forwards; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.cup-header { display:flex; align-items:center; gap:12px; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid var(--border); }
+.cup-badge { font-family:'Bebas Neue',sans-serif; font-size:0.65rem; letter-spacing:0.12em; padding:3px 8px; border-radius:4px; border:1px solid currentColor; }
+.cup-name { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:0.05em; }
+.cup-count { margin-left:auto; font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:var(--muted); background:var(--surface2); padding:3px 8px; border-radius:4px; border:1px solid var(--border); }
+.team-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:10px; }
+.team-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 16px; display:flex; align-items:center; gap:12px; transition:all 0.2s; position:relative; overflow:hidden; }
+.team-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--cup-color,var(--muted)); border-radius:10px 0 0 10px; }
+.team-card:hover { border-color:var(--cup-color,var(--border)); transform:translateY(-1px); box-shadow:0 4px 16px rgba(0,0,0,0.3); }
+.team-rank { font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:var(--muted); min-width:26px; text-align:center; }
+.team-color-swatch { width:30px; height:30px; border-radius:6px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:0.58rem; font-weight:600; color:white; font-family:'JetBrains Mono',monospace; }
+.team-info { flex:1; min-width:0; }
+.team-name { font-size:0.85rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text); }
+.team-meta { font-size:0.7rem; color:var(--muted); margin-top:2px; font-family:'JetBrains Mono',monospace; }
+.team-ovr { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:0.03em; min-width:46px; text-align:right; }
+.team-ovr small { display:block; font-family:'DM Sans',sans-serif; font-size:0.6rem; color:var(--muted); letter-spacing:0; font-weight:400; margin-top:-4px; }
+.tag { font-size:0.6rem; padding:2px 5px; border-radius:3px; font-family:'JetBrains Mono',monospace; font-weight:600; letter-spacing:0.04em; display:inline-block; margin-top:3px; }
+.tag-partial { background:rgba(224,154,58,0.15); color:var(--warning); border:1px solid rgba(224,154,58,0.3); }
+.team-link { color:inherit; text-decoration:none; }
+.team-link:hover { text-decoration:underline; text-underline-offset:2px; }
+.cup-titans     { --cup-color:var(--titans); }
+.cup-elite      { --cup-color:var(--elite); }
+.cup-contender  { --cup-color:var(--contender); }
+.cup-challenger { --cup-color:var(--challenger); }
+.cup-rivals     { --cup-color:var(--rivals); }
+.cup-aspirants  { --cup-color:var(--aspirants); }
+
+.incomplete-section { margin-top:40px; padding-top:24px; border-top:2px dashed rgba(248,113,113,0.3); }
+.incomplete-title { font-family:'Bebas Neue',sans-serif; font-size:1.2rem; letter-spacing:0.05em; color:var(--incomplete); }
+.incomplete-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:8px; margin-top:12px; }
+.incomplete-card { background:rgba(248,113,113,0.04); border:1px solid rgba(248,113,113,0.15); border-radius:8px; padding:10px 14px; display:flex; align-items:center; gap:10px; }
+.incomplete-badge { font-family:'JetBrains Mono',monospace; font-size:0.68rem; color:var(--incomplete); background:rgba(248,113,113,0.1); border:1px solid rgba(248,113,113,0.2); padding:3px 7px; border-radius:4px; white-space:nowrap; margin-left:auto; }
+
+/* LEAGUE TAB */
+.league-tabs-wrap { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:24px; align-items:center; }
+.league-tab-btn { font-family:'JetBrains Mono',monospace; font-size:0.72rem; padding:6px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:20px; color:var(--muted); cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+.league-tab-btn:hover { color:var(--text); border-color:var(--text); }
+.league-panel { display:none; }
+.league-panel.active { display:block; animation:fadeIn 0.3s ease; }
+.league-header { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:14px; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid var(--border); }
+.league-title { font-family:'Bebas Neue',sans-serif; font-size:2.2rem; letter-spacing:0.05em; line-height:1; }
+.league-subtitle { font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:var(--muted); margin-top:4px; }
+.metric-selector { display:flex; gap:4px; background:var(--surface2); padding:4px; border-radius:8px; border:1px solid var(--border); }
+.metric-btn { font-family:'JetBrains Mono',monospace; font-size:0.7rem; padding:5px 12px; border:none; border-radius:5px; cursor:pointer; background:transparent; color:var(--muted); transition:all 0.15s; }
+.metric-btn.active { background:var(--accent); color:#0a0a0f; }
+.metric-btn:hover:not(.active) { color:var(--text); }
+
+/* STAT CARDS */
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; margin-bottom:24px; }
+.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px; text-align:center; }
+.stat-card.highlight { border-color:rgba(201,168,76,0.3); background:rgba(201,168,76,0.04); }
+.stat-val { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; letter-spacing:0.03em; color:var(--accent); line-height:1; }
+.stat-lbl { font-size:0.62rem; color:var(--muted); margin-top:4px; font-family:'JetBrains Mono',monospace; letter-spacing:0.04em; }
+
+/* CHARTS */
+.charts-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+.chart-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:18px; }
+.chart-title { font-family:'Bebas Neue',sans-serif; font-size:0.95rem; letter-spacing:0.05em; color:var(--text); margin-bottom:14px; }
+.chart-wrap { position:relative; height:200px; }
+.chart-wrap-tall { position:relative; height:280px; }
+
+/* TABLE */
+.percentile-section { margin-bottom:24px; }
+.section-title { font-family:'Bebas Neue',sans-serif; font-size:1.15rem; letter-spacing:0.05em; color:var(--text); margin-bottom:10px; }
+.percentile-table { width:100%; border-collapse:collapse; font-size:0.78rem; }
+.percentile-table th { font-family:'JetBrains Mono',monospace; font-size:0.62rem; letter-spacing:0.06em; color:var(--muted); text-align:left; padding:7px 10px; border-bottom:1px solid var(--border); }
+.percentile-table td { padding:7px 10px; border-bottom:1px solid rgba(42,42,58,0.4); font-family:'JetBrains Mono',monospace; }
+.percentile-table tr:hover td { background:var(--surface2); }
+.ovr-val { font-weight:600; }
+.range-bar { display:flex; align-items:center; gap:6px; }
+.range-fill { height:4px; border-radius:2px; min-width:3px; opacity:0.7; }
+
+@media (max-width:768px) {
+  .charts-row { grid-template-columns:1fr; }
+  .header,.content { padding:16px; }
+  .progress-wrap,.stats-bar,.error-banner { padding-left:16px; padding-right:16px; }
+  .stats-grid { grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); }
+}
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background:var(--surface); }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
 </style>
 </head>
 <body>
 
 <header class="header">
   <div class="header-left">
-    <h1>MFL Cup Rankings</h1>
-    <p id="subtitle">Top-11 OVR Strength · All Clubs</p>
+    <h1>MFL Rankings</h1>
+    <p id="subtitle">Cup Seedings &amp; League Strength · All Divisions</p>
   </div>
   <div class="header-right">
     <div class="last-updated" id="lastUpdated">Never updated</div>
-    <button class="btn-update" id="btnUpdate" onclick="startUpdate()">
-      <span>⟳</span> Update Squads
-    </button>
+    <button class="btn btn-primary" id="btnUpdate" onclick="startUpdate()">⟳ Update All</button>
   </div>
 </header>
 
+<div class="tabs-wrap">
+  <button class="tab-btn active" onclick="switchTab('cup')">🏆 Cup Seedings</button>
+  <button class="tab-btn" onclick="switchTab('league')">📊 League Strength</button>
+</div>
+
 <div class="progress-wrap" id="progressWrap">
   <div class="progress-info">
-    <span class="progress-label" id="progressLabel">Fetching squads…</span>
+    <span class="progress-label" id="progressLabel">Loading…</span>
     <span class="progress-stats" id="progressStats">0 / 0</span>
   </div>
-  <div class="progress-bar-track">
-    <div class="progress-bar-fill" id="progressFill"></div>
-  </div>
+  <div class="progress-bar-track"><div class="progress-bar-fill" id="progressFill"></div></div>
   <div class="progress-sub" id="progressSub">Estimating time…</div>
 </div>
 
 <div class="error-banner" id="errorBanner"></div>
 
-<div class="stats-bar" id="statsBar" style="display:none;">
-  <div class="stat-pill">
-    <div class="dot" style="background:var(--accent)"></div>
-    <span>Total clubs:</span>
-    <strong id="statTotal">—</strong>
-  </div>
-  <div class="stat-pill">
-    <div class="dot" style="background:var(--success)"></div>
-    <span>Ranked:</span>
-    <strong id="statRanked">—</strong>
-  </div>
-  <div class="stat-pill">
-    <div class="dot" style="background:var(--warning)"></div>
-    <span>Partial squads:</span>
-    <strong id="statPartial">—</strong>
-  </div>
-  <div class="stat-pill">
-    <div class="dot" style="background:var(--danger)"></div>
-    <span>Incomplete:</span>
-    <strong id="statIncomplete">—</strong>
-  </div>
-  <div class="stat-pill">
-    <div class="dot" style="background:var(--muted)"></div>
-    <span>Failed:</span>
-    <strong id="statFailed">—</strong>
-  </div>
+<div class="stats-bar" id="statsBar" style="display:none">
+  <div class="stat-pill"><div class="dot" style="background:var(--accent)"></div><span>Total:</span><strong id="statTotal">—</strong></div>
+  <div class="stat-pill"><div class="dot" style="background:var(--success)"></div><span>Ranked:</span><strong id="statRanked">—</strong></div>
+  <div class="stat-pill"><div class="dot" style="background:var(--warning)"></div><span>Partial:</span><strong id="statPartial">—</strong></div>
+  <div class="stat-pill"><div class="dot" style="background:var(--danger)"></div><span>Incomplete:</span><strong id="statIncomplete">—</strong></div>
+  <div class="stat-pill"><div class="dot" style="background:var(--muted)"></div><span>Failed:</span><strong id="statFailed">—</strong></div>
 </div>
 
-<div class="content" id="emptyState">
-  <div class="empty-state">
-    <div class="icon">⚽</div>
-    <h2>No Data Yet</h2>
-    <p>Click "Update Squads" to fetch and rank all clubs.</p>
+<div class="content">
+  <div class="tab-panel active" id="panel-cup">
+    <div id="emptyStateCup" class="empty-state">
+      <div class="icon">🏆</div><h2>No Data Yet</h2><p>Click "Update All" to fetch and rank all clubs.</p>
+    </div>
+    <div id="cupContent"></div>
+  </div>
+
+  <div class="tab-panel" id="panel-league">
+    <div id="emptyStateLeague" class="empty-state">
+      <div class="icon">📊</div><h2>No Data Yet</h2><p>Click "Update All" to load league strength data.</p>
+    </div>
+    <div id="leagueContent" style="display:none">
+      <div class="league-tabs-wrap" id="leagueTabs"></div>
+      <div id="leaguePanels"></div>
+    </div>
   </div>
 </div>
-<main class="content" id="mainContent"></main>
 
 <script>
 // ============================================================
 // CONFIG
 // ============================================================
+const API_BASE = 'https://small-lab-192f.ricky-hyde-selling.workers.dev';
 const DIVISIONS = [1,2,3,4,5,6,7,8,9,10];
+const LEAGUE_NAMES = {1:'Diamond',2:'Platinum',3:'Gold',4:'Silver',5:'Bronze',6:'Iron',7:'Stone',8:'Ice',9:'Spark',10:'Flint'};
+const LEAGUE_COLORS = {1:'#67e8f9',2:'#c4b5fd',3:'#fbbf24',4:'#cbd5e1',5:'#fb923c',6:'#94a3b8',7:'#a16207',8:'#7dd3fc',9:'#f97316',10:'#d6d3d1'};
 
 const CUP_TIERS = [
-  { name: 'Titans',       cls: 'cup-titans',     size: 32 },
-  { name: 'Elite 1',      cls: 'cup-elite',      size: 32 },
-  { name: 'Elite 2',      cls: 'cup-elite',      size: 32 },
-  { name: 'Contender 1',  cls: 'cup-contender',  size: 32 },
-  { name: 'Contender 2',  cls: 'cup-contender',  size: 32 },
-  { name: 'Contender 3',  cls: 'cup-contender',  size: 32 },
-  { name: 'Contender 4',  cls: 'cup-contender',  size: 32 },
-  { name: 'Challenger 1', cls: 'cup-challenger', size: 32 },
-  { name: 'Challenger 2', cls: 'cup-challenger', size: 32 },
-  { name: 'Challenger 3', cls: 'cup-challenger', size: 32 },
-  { name: 'Challenger 4', cls: 'cup-challenger', size: 32 },
-  { name: 'Challenger 5', cls: 'cup-challenger', size: 32 },
-  { name: 'Challenger 6', cls: 'cup-challenger', size: 32 },
-  { name: 'Challenger 7', cls: 'cup-challenger', size: 32 },
-  { name: 'Challenger 8', cls: 'cup-challenger', size: 32 },
-  { name: 'Rivals 1',     cls: 'cup-rivals',     size: 32 },
-  { name: 'Rivals 2',     cls: 'cup-rivals',     size: 32 },
-  { name: 'Rivals 3',     cls: 'cup-rivals',     size: 32 },
-  { name: 'Rivals 4',     cls: 'cup-rivals',     size: 32 },
-  { name: 'Rivals 5',     cls: 'cup-rivals',     size: 32 },
-  { name: 'Rivals 6',     cls: 'cup-rivals',     size: 32 },
-  { name: 'Rivals 7',     cls: 'cup-rivals',     size: 32 },
-  { name: 'Rivals 8',     cls: 'cup-rivals',     size: 32 },
-  { name: 'Rivals 9',     cls: 'cup-rivals',     size: 32 },
-  { name: 'Rivals 10',    cls: 'cup-rivals',     size: 32 },
-  { name: 'Rivals 11',    cls: 'cup-rivals',     size: 32 },
-  { name: 'Rivals 12',    cls: 'cup-rivals',     size: 32 },
-  { name: 'Rivals 13',    cls: 'cup-rivals',     size: 32 },
-  { name: 'Rivals 14',    cls: 'cup-rivals',     size: 32 },
-  { name: 'Rivals 15',    cls: 'cup-rivals',     size: 32 },
-  { name: 'Rivals 16',    cls: 'cup-rivals',     size: 32 },
-  // Aspirants fills the rest — handled dynamically
+  {name:'Titans',cls:'cup-titans',size:32},
+  {name:'Elite 1',cls:'cup-elite',size:32},{name:'Elite 2',cls:'cup-elite',size:32},
+  {name:'Contender 1',cls:'cup-contender',size:32},{name:'Contender 2',cls:'cup-contender',size:32},
+  {name:'Contender 3',cls:'cup-contender',size:32},{name:'Contender 4',cls:'cup-contender',size:32},
+  {name:'Challenger 1',cls:'cup-challenger',size:32},{name:'Challenger 2',cls:'cup-challenger',size:32},
+  {name:'Challenger 3',cls:'cup-challenger',size:32},{name:'Challenger 4',cls:'cup-challenger',size:32},
+  {name:'Challenger 5',cls:'cup-challenger',size:32},{name:'Challenger 6',cls:'cup-challenger',size:32},
+  {name:'Challenger 7',cls:'cup-challenger',size:32},{name:'Challenger 8',cls:'cup-challenger',size:32},
+  {name:'Rivals 1',cls:'cup-rivals',size:32},{name:'Rivals 2',cls:'cup-rivals',size:32},
+  {name:'Rivals 3',cls:'cup-rivals',size:32},{name:'Rivals 4',cls:'cup-rivals',size:32},
+  {name:'Rivals 5',cls:'cup-rivals',size:32},{name:'Rivals 6',cls:'cup-rivals',size:32},
+  {name:'Rivals 7',cls:'cup-rivals',size:32},{name:'Rivals 8',cls:'cup-rivals',size:32},
+  {name:'Rivals 9',cls:'cup-rivals',size:32},{name:'Rivals 10',cls:'cup-rivals',size:32},
+  {name:'Rivals 11',cls:'cup-rivals',size:32},{name:'Rivals 12',cls:'cup-rivals',size:32},
+  {name:'Rivals 13',cls:'cup-rivals',size:32},{name:'Rivals 14',cls:'cup-rivals',size:32},
+  {name:'Rivals 15',cls:'cup-rivals',size:32},{name:'Rivals 16',cls:'cup-rivals',size:32},
 ];
 
-const API_BASE = 'https://small-lab-192f.ricky-hyde-selling.workers.dev';
 const DELAY_MS = 80;
-const COOLDOWN_403_MS = 60000;
+const COOLDOWNS = [90000, 120000, 180000];
 const ROTATE_EVERY = 25;
-const STORAGE_KEY = 'mfl_cup_rankings_v1';
+const STORAGE_KEY = 'mfl_rankings_v2';
 
-// Rotating UA headers
 const HEADER_SETS = [
-  { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36', 'Accept': 'application/json', 'Referer': 'https://app.playmfl.com/', 'Origin': 'https://app.playmfl.com' },
-  { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/119.0.0.0 Safari/537.36', 'Accept': 'application/json', 'Referer': 'https://app.playmfl.com/', 'Origin': 'https://app.playmfl.com' },
-  { 'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/118.0.0.0 Safari/537.36', 'Accept': 'application/json', 'Referer': 'https://app.playmfl.com/', 'Origin': 'https://app.playmfl.com' },
-  { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0', 'Accept': 'application/json', 'Referer': 'https://app.playmfl.com/', 'Origin': 'https://app.playmfl.com' },
-  { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.1 Safari/605.1.15', 'Accept': 'application/json', 'Referer': 'https://app.playmfl.com/', 'Origin': 'https://app.playmfl.com' },
+  {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36','Accept':'application/json','Referer':'https://app.playmfl.com/','Origin':'https://app.playmfl.com'},
+  {'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/119.0.0.0 Safari/537.36','Accept':'application/json','Referer':'https://app.playmfl.com/','Origin':'https://app.playmfl.com'},
+  {'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/118.0.0.0 Safari/537.36','Accept':'application/json','Referer':'https://app.playmfl.com/','Origin':'https://app.playmfl.com'},
+  {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0','Accept':'application/json','Referer':'https://app.playmfl.com/','Origin':'https://app.playmfl.com'},
+  {'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.1 Safari/605.1.15','Accept':'application/json','Referer':'https://app.playmfl.com/','Origin':'https://app.playmfl.com'},
 ];
 
 // ============================================================
@@ -660,430 +266,527 @@ let isRunning = false;
 let startTime = null;
 let completedCount = 0;
 let failedCount = 0;
+let activeTab = 'cup';
+let activeLeagueDiv = 1;
+let metricByDiv = {};
+let chartInstances = {};
 
 // ============================================================
 // UTILS
 // ============================================================
-function getHeaders() {
-  return HEADER_SETS[Math.floor(requestCount / ROTATE_EVERY) % HEADER_SETS.length];
+const getHeaders = () => HEADER_SETS[Math.floor(requestCount / ROTATE_EVERY) % HEADER_SETS.length];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const initials = name => name.split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);
+const formatTime = ms => ms < 60000 ? `${Math.round(ms/1000)}s` : `${Math.floor(ms/60000)}m ${Math.round((ms%60000)/1000)}s`;
+
+function topNOVR(players, n) {
+  return players.map(p => p.metadata?.overall || 0).sort((a,b)=>b-a).slice(0,n).reduce((s,v)=>s+v,0);
 }
 
-function sleep(ms) {
-  return new Promise(r => setTimeout(r, ms));
+function getVals(clubs, metric) {
+  return clubs.map(c => metric==='top11' ? c.top11 : metric==='top16' ? c.top16 : c.topFull).filter(v=>v>0);
 }
 
-function top11OVR(players) {
-  const overalls = players.map(p => p.metadata?.overall || 0);
-  overalls.sort((a, b) => b - a);
-  return overalls.slice(0, 11).reduce((s, v) => s + v, 0);
+function avg(arr) { return arr.length ? Math.round(arr.reduce((s,v)=>s+v,0)/arr.length) : 0; }
+
+function calcStats(vals) {
+  if (!vals.length) return null;
+  const asc = [...vals].sort((a,b)=>a-b);
+  const desc = [...vals].sort((a,b)=>b-a);
+  const n = vals.length;
+  const top = pct => avg(desc.slice(0, Math.max(1, Math.ceil(n*pct))));
+  const bot = pct => avg(asc.slice(0, Math.max(1, Math.ceil(n*pct))));
+  const mid = (lo, hi) => avg(asc.slice(Math.floor(lo*n), Math.ceil(hi*n)));
+  return {
+    n, max:desc[0], min:asc[0], mean:avg(vals),
+    median: asc[Math.floor(n/2)],
+    top1: top(0.01), top5: top(0.05), top10: top(0.10), top25: top(0.25),
+    mid10: mid(0.45,0.55), mid25: mid(0.375,0.625),
+    bot25: bot(0.25), bot10: bot(0.10), bot5: bot(0.05),
+    p90: asc[Math.floor(n*0.9)], p75: asc[Math.floor(n*0.75)],
+    p50: asc[Math.floor(n*0.5)], p25: asc[Math.floor(n*0.25)], p10: asc[Math.floor(n*0.1)],
+    desc, asc,
+    dist: buildDist(vals),
+  };
 }
 
-function initials(name) {
-  return name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
-}
-
-function formatTime(ms) {
-  if (ms < 60000) return `${Math.round(ms / 1000)}s`;
-  return `${Math.floor(ms / 60000)}m ${Math.round((ms % 60000) / 1000)}s`;
+function buildDist(vals) {
+  if (!vals.length) return [];
+  const mn = Math.min(...vals), mx = Math.max(...vals);
+  const bkt = Math.max(1, Math.round((mx-mn)/20));
+  const map = {};
+  for (const v of vals) { const b = Math.floor((v-mn)/bkt)*bkt+mn; map[b]=(map[b]||0)+1; }
+  return Object.entries(map).sort((a,b)=>+a[0]-+b[0]).map(([k,v])=>({label:+k,count:v}));
 }
 
 // ============================================================
-// FETCH A SINGLE CLUB
+// TAB SWITCHING
 // ============================================================
-async function fetchClub(clubId) {
-  requestCount++;
-  const res = await fetch(`${API_BASE}/clubs/${clubId}/players`, {
-    headers: getHeaders()
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active',['cup','league'][i]===tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id===`panel-${tab}`));
+}
+
+function switchLeague(div) {
+  activeLeagueDiv = div;
+  document.querySelectorAll('.league-tab-btn').forEach(b => {
+    const active = +b.dataset.div === div;
+    b.classList.toggle('active', active);
+    b.style.background = active ? LEAGUE_COLORS[div] : '';
+    b.style.color = active ? '#0a0a0f' : '';
+    b.style.borderColor = active ? LEAGUE_COLORS[div] : '';
   });
+  document.querySelectorAll('.league-panel').forEach(p => p.classList.toggle('active', +p.dataset.div===div));
+}
 
-  if (res.status === 403) {
-    throw new Error('403');
-  }
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status}`);
-  }
-
-  const players = await res.json();
-  return players;
+function switchMetric(metric, div) {
+  metricByDiv[div] = metric;
+  document.querySelectorAll(`.metric-btn[data-div="${div}"]`).forEach(b => b.classList.toggle('active', b.dataset.metric===metric));
+  const snap = loadSnapshot();
+  if (!snap) return;
+  const clubs = snap.results.filter(r => r.division === div);
+  renderLeagueStatsAndCharts(div, clubs, metric);
 }
 
 // ============================================================
-// FETCH CLUB IDS FROM LEADERBOARDS
+// FETCH WITH RETRY
 // ============================================================
-async function fetchAllClubIds() {
-  const clubIds = new Set();
-  const COOLDOWNS = [90000, 120000, 180000];
-
-  for (let d = 0; d < DIVISIONS.length; d++) {
-    const div = DIVISIONS[d];
-    updateProgress(d, DIVISIONS.length, `Loading division ${div} leaderboard…`, null);
-
-    let attempt = 0;
-    let success = false;
-
-    while (attempt <= 3 && !success) {
-      try {
-        requestCount++;
-        const res = await fetch(
-          `${API_BASE}/leaderboards/clubs/global?division=${div}&sort=nbMflPoints&sortOrder=DESC&limit=20000`,
-          { headers: getHeaders() }
-        );
-
-        if (res.status === 403) {
-          throw new Error('403');
-        }
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
-
-        const data = await res.json();
-        const found = data.clubs || [];
-        found.forEach(c => clubIds.add(c.id));
-        updateProgressLabel(`Division ${div}: ${found.length} clubs found (${clubIds.size} total so far)`);
-        await sleep(DELAY_MS);
-        success = true;
-
-      } catch (err) {
-        if (err.message === '403') {
-          if (attempt < 3) {
-            const cooldown = COOLDOWNS[attempt] || 180000;
-            showError(`⚠️ Rate limited on division ${div} leaderboard — attempt ${attempt + 1}/3. Cooling down ${cooldown / 1000}s…`);
-            await sleep(cooldown);
-            hideError();
-            attempt++;
-          } else {
-            showError(`⚠️ Division ${div} leaderboard failed after 3 retries — skipping.`);
-            await sleep(2000);
-            hideError();
-            success = true;
-          }
-        } else {
-          showError(`⚠️ Failed to fetch division ${div} leaderboard: ${err.message}`);
-          await sleep(1000);
-          hideError();
-          success = true; // don't retry non-403 errors
-        }
-      }
+async function fetchWithRetry(url) {
+  let attempt = 0;
+  while (true) {
+    try {
+      requestCount++;
+      const res = await fetch(url, { headers: getHeaders() });
+      if (res.status === 403) throw new Error('403');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.json();
+    } catch(err) {
+      if (err.message === '403' && attempt < 3) {
+        const cd = COOLDOWNS[attempt] || 180000;
+        showError(`⚠️ Rate limited — attempt ${attempt+1}/3, cooling down ${cd/1000}s…`);
+        await sleep(cd);
+        hideError();
+        attempt++;
+      } else { throw err; }
     }
   }
+}
 
-  return [...clubIds];
+async function fetchAllClubIds() {
+  const seen = new Set();
+  for (let d = 0; d < DIVISIONS.length; d++) {
+    const div = DIVISIONS[d];
+    updateProgress(d, DIVISIONS.length, `Loading ${LEAGUE_NAMES[div]} leaderboard…`, null);
+    try {
+      const data = await fetchWithRetry(`${API_BASE}/leaderboards/clubs/global?division=${div}&sort=nbMflPoints&sortOrder=DESC&limit=20000`);
+      (data.clubs||[]).forEach(c => seen.add(c.id));
+      updateProgressLabel(`${LEAGUE_NAMES[div]}: ${(data.clubs||[]).length} clubs (${seen.size} total)`);
+      await sleep(DELAY_MS);
+    } catch(e) { showError(`Division ${div} failed: ${e.message}`); await sleep(1000); hideError(); }
+  }
+  return [...seen];
+}
+
+async function fetchClubsBatch(ids, filterDiv) {
+  const results = [], failed = [];
+  const total = ids.length;
+  for (let i = 0; i < ids.length; i++) {
+    const clubId = ids[i];
+    if (requestCount > 0 && requestCount % 150 === 0) { updateProgressLabel('⏸ Pausing 30s…'); await sleep(30000); }
+    let ok = false, attempt = 0;
+    while (!ok) {
+      try {
+        const players = await fetchWithRetry(`${API_BASE}/clubs/${clubId}/players`);
+        await sleep(DELAY_MS);
+        if (!Array.isArray(players) || !players.length) {
+          results.push({clubId, clubName:`Club ${clubId}`, mainColor:'#333', secondaryColor:'#555', division:filterDiv||null, playerCount:0, top11:0, top16:0, topFull:0});
+        } else {
+          results.push({
+            clubId,
+            clubName: players[0]?.activeContract?.club?.name || `Club ${clubId}`,
+            mainColor: players[0]?.activeContract?.club?.mainColor || '#333',
+            secondaryColor: players[0]?.activeContract?.club?.secondaryColor || '#555',
+            division: players[0]?.activeContract?.club?.division || filterDiv || null,
+            playerCount: players.length,
+            top11: topNOVR(players,11),
+            top16: topNOVR(players,16),
+            topFull: topNOVR(players, players.length),
+          });
+        }
+        completedCount++;
+        ok = true;
+      } catch(err) {
+        if (err.message === '403' && attempt < 3) {
+          const cd = COOLDOWNS[attempt]||180000;
+          showError(`⚠️ Rate limited club ${clubId} — attempt ${attempt+1}/3, cooling ${cd/1000}s…`);
+          await sleep(cd); hideError(); attempt++;
+        } else { failed.push(clubId); failedCount++; ok = true; }
+      }
+    }
+    const elapsed = Date.now()-startTime, done = i+1;
+    updateProgress(done, total, `Club ${clubId} — ${done}/${total}`, (total-done)*(elapsed/done));
+  }
+  return {results, failed};
 }
 
 // ============================================================
-// MAIN UPDATE FLOW
+// SINGLE DIVISION UPDATE
+// ============================================================
+async function updateDivision(div) {
+  if (isRunning) return;
+  isRunning = true; startTime = Date.now(); requestCount = 0; completedCount = 0; failedCount = 0;
+  const btn = document.getElementById(`btn-div-${div}`);
+  if (btn) { btn.disabled=true; btn.textContent='⟳ Updating…'; }
+  document.getElementById('progressWrap').classList.add('visible');
+  document.getElementById('progressFill').style.width='0%';
+
+  updateProgress(0,1,`Loading ${LEAGUE_NAMES[div]} leaderboard…`,null);
+  let ids = [];
+  try {
+    const data = await fetchWithRetry(`${API_BASE}/leaderboards/clubs/global?division=${div}&sort=nbMflPoints&sortOrder=DESC&limit=20000`);
+    ids = (data.clubs||[]).map(c=>c.id);
+  } catch(e) {
+    showError(`Failed: ${e.message}`);
+    document.getElementById('progressWrap').classList.remove('visible');
+    if (btn) { btn.disabled=false; btn.textContent='⟳ Update'; }
+    isRunning=false; return;
+  }
+
+  const {results, failed} = await fetchClubsBatch(ids, div);
+  document.getElementById('progressWrap').classList.remove('visible');
+
+  let snap = loadSnapshot() || {updatedAt:'',results:[],failed:[]};
+  snap.results = snap.results.filter(r => r.division !== div);
+  snap.failed = (snap.failed||[]).filter(id => !ids.includes(id));
+  snap.results.push(...results);
+  snap.failed.push(...failed);
+  snap.updatedAt = new Date().toISOString();
+  saveSnapshot(snap);
+  updateLastUpdated(snap.updatedAt);
+  renderAll(snap.results, snap.failed);
+
+  if (btn) { btn.disabled=false; btn.textContent='⟳ Update'; }
+  isRunning=false;
+}
+
+// ============================================================
+// MAIN UPDATE
 // ============================================================
 async function startUpdate() {
   if (isRunning) return;
-  isRunning = true;
-  requestCount = 0;
-  completedCount = 0;
-  failedCount = 0;
-  startTime = Date.now();
-
+  isRunning=true; requestCount=0; completedCount=0; failedCount=0; startTime=Date.now();
   const btn = document.getElementById('btnUpdate');
-  btn.disabled = true;
-  btn.innerHTML = '<span>⟳</span> Fetching…';
-
+  btn.disabled=true; btn.textContent='⟳ Fetching…';
   document.getElementById('progressWrap').classList.add('visible');
-  document.getElementById('mainContent').innerHTML = '';
-  document.getElementById('emptyState').style.display = 'none';
-  document.getElementById('errorBanner').classList.remove('visible');
-  document.getElementById('statsBar').style.display = 'none';
-  document.getElementById('progressFill').style.width = '0%';
-  document.getElementById('progressStats').textContent = '0 / 0';
-  document.getElementById('progressSub').textContent = 'Loading leaderboards…';
+  document.getElementById('progressFill').style.width='0%';
+  document.getElementById('progressStats').textContent='0 / 0';
+  document.getElementById('progressSub').textContent='Loading leaderboards…';
+  document.getElementById('statsBar').style.display='none';
+  hideError();
 
-  // Step 1: gather all club IDs from leaderboards
-  updateProgress(0, DIVISIONS.length, 'Loading leaderboards… (0/10)', null);
-  const CLUB_IDS = await fetchAllClubIds();
-  document.getElementById('subtitle').textContent = `Top-11 OVR Strength · ${CLUB_IDS.length} clubs across ${DIVISIONS.length} divisions`;
+  const allIds = await fetchAllClubIds();
+  document.getElementById('subtitle').textContent=`Cup Seedings & League Strength · ${allIds.length} clubs`;
 
-  if (CLUB_IDS.length === 0) {
-    showError('⚠️ No club IDs found from leaderboards. API may be unavailable.');
+  if (!allIds.length) {
+    showError('⚠️ No clubs found. API may be unavailable.');
     document.getElementById('progressWrap').classList.remove('visible');
-    btn.disabled = false;
-    btn.innerHTML = '<span>⟳</span> Update Squads';
-    isRunning = false;
-    return;
+    btn.disabled=false; btn.textContent='⟳ Update All'; isRunning=false; return;
   }
 
-  const results = [];
-  const failed = [];
-  const total = CLUB_IDS.length;
-
-  updateProgress(0, total, `Starting — ${total} clubs to fetch…`, null);
-
-  for (let i = 0; i < CLUB_IDS.length; i++) {
-    const clubId = CLUB_IDS[i];
-
-    // Proactive pause every 150 requests
-    if (requestCount > 0 && requestCount % 150 === 0) {
-      updateProgressLabel(`⏸ Pausing to avoid rate limits… resuming in 30s`);
-      await sleep(30000);
-    }
-
-    const MAX_RETRIES = 3;
-    const COOLDOWNS = [90000, 120000, 180000]; // escalating: 90s, 120s, 180s
-    let attempt = 0;
-    let success = false;
-
-    while (attempt <= MAX_RETRIES && !success) {
-      try {
-        const players = await fetchClub(clubId);
-        await sleep(DELAY_MS);
-
-        if (!Array.isArray(players) || players.length === 0) {
-          results.push({ clubId, clubName: `Club ${clubId}`, mainColor: '#333', secondaryColor: '#555', division: null, playerCount: 0, top11: 0 });
-        } else {
-          const clubName = players[0]?.activeContract?.club?.name || `Club ${clubId}`;
-          const mainColor = players[0]?.activeContract?.club?.mainColor || '#333';
-          const secondaryColor = players[0]?.activeContract?.club?.secondaryColor || '#555';
-          const division = players[0]?.activeContract?.club?.division || null;
-          const playerCount = players.length;
-          const top11 = top11OVR(players);
-          results.push({ clubId, clubName, mainColor, secondaryColor, division, playerCount, top11 });
-        }
-        completedCount++;
-        success = true;
-
-      } catch (err) {
-        if (err.message === '403') {
-          if (attempt < MAX_RETRIES) {
-            const cooldown = COOLDOWNS[attempt] || 180000;
-            const cooldownSecs = cooldown / 1000;
-            showError(`⚠️ Rate limited at club ${clubId} — attempt ${attempt + 1}/${MAX_RETRIES}. Cooling down ${cooldownSecs}s…`);
-            await sleep(cooldown);
-            hideError();
-            attempt++;
-          } else {
-            // All retries exhausted
-            failed.push(clubId);
-            failedCount++;
-            success = true; // exit loop
-          }
-        } else {
-          // Non-403 error — don't retry
-          failed.push(clubId);
-          failedCount++;
-          success = true; // exit loop
-        }
-      }
-    }
-
-    const elapsed = Date.now() - startTime;
-    const done = i + 1;
-    const rate = elapsed / done;
-    const remaining = (total - done) * rate;
-    updateProgress(done, total, `Club ${clubId} — ${done}/${total} fetched`, remaining);
-  }
-
-  // Done — assign tiers and render
+  const {results, failed} = await fetchClubsBatch(allIds, null);
   document.getElementById('progressWrap').classList.remove('visible');
-  renderRankings(results, failed);
 
-  // Save to localStorage
-  const snapshot = {
+  const snap = {
     updatedAt: new Date().toISOString(),
-    results: results.map(r => ({ clubId: r.clubId, clubName: r.clubName, mainColor: r.mainColor, secondaryColor: r.secondaryColor, division: r.division, playerCount: r.playerCount, top11: r.top11 })),
+    results: results.map(r=>({clubId:r.clubId,clubName:r.clubName,mainColor:r.mainColor,secondaryColor:r.secondaryColor,division:r.division,playerCount:r.playerCount,top11:r.top11,top16:r.top16,topFull:r.topFull})),
     failed
   };
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot)); } catch(e) {}
-
-  updateLastUpdated(snapshot.updatedAt);
-
-  btn.disabled = false;
-  btn.innerHTML = '<span>⟳</span> Update Squads';
-  isRunning = false;
+  saveSnapshot(snap);
+  updateLastUpdated(snap.updatedAt);
+  renderAll(snap.results, failed);
+  btn.disabled=false; btn.textContent='⟳ Update All'; isRunning=false;
 }
 
 // ============================================================
-// RENDER
+// RENDER ALL
 // ============================================================
-function assignTiers(rankedClubs) {
-  // rankedClubs sorted desc by top11
-  const tiers = [];
-  let offset = 0;
-  let aspirantNum = 1;
-
-  for (const tier of CUP_TIERS) {
-    const slice = rankedClubs.slice(offset, offset + tier.size);
-    if (slice.length === 0) break;
-    tiers.push({ ...tier, clubs: slice });
-    offset += tier.size;
-  }
-
-  // Aspirants — all remaining, split into groups of 32
-  const remaining = rankedClubs.slice(offset);
-  for (let i = 0; i < remaining.length; i += 32) {
-    const slice = remaining.slice(i, i + 32);
-    if (slice.length === 0) break;
-    tiers.push({
-      name: remaining.length <= 32 ? 'Aspirants' : `Aspirants ${aspirantNum}`,
-      cls: 'cup-aspirants',
-      clubs: slice
-    });
-    aspirantNum++;
-  }
-
-  return tiers;
-}
-
-function renderRankings(results, failed) {
-  const ranked = results.filter(r => r.playerCount >= 16);
-  const partial = results.filter(r => r.playerCount >= 11 && r.playerCount <= 15);
-  const incomplete = results.filter(r => r.playerCount <= 10);
-
-  // Sort ranked + partial together by top11 desc, then split into tiers
-  // Partial squads included in rankings but flagged
-  const allRanked = [...ranked, ...partial].sort((a, b) => b.top11 - a.top11);
-
-  const tiers = assignTiers(allRanked);
-
-  // Stats
+function renderAll(results, failed) {
+  renderCupTab(results, failed);
+  renderLeagueTab(results);
+  const ranked = results.filter(r=>r.playerCount>=11);
+  const partial = results.filter(r=>r.playerCount>=11&&r.playerCount<=15);
+  const incomplete = results.filter(r=>r.playerCount<=10);
   document.getElementById('statTotal').textContent = results.length;
-  document.getElementById('statRanked').textContent = allRanked.length;
+  document.getElementById('statRanked').textContent = ranked.length;
   document.getElementById('statPartial').textContent = partial.length;
   document.getElementById('statIncomplete').textContent = incomplete.length;
   document.getElementById('statFailed').textContent = failed.length;
-  document.getElementById('statsBar').style.display = 'flex';
+  document.getElementById('statsBar').style.display='flex';
+}
 
-  const main = document.getElementById('mainContent');
-  main.innerHTML = '';
+// ============================================================
+// CUP TAB RENDER
+// ============================================================
+function assignTiers(clubs) {
+  const tiers=[]; let offset=0, aspNum=1;
+  for (const t of CUP_TIERS) {
+    const s=clubs.slice(offset,offset+t.size); if(!s.length) break;
+    tiers.push({...t,clubs:s}); offset+=t.size;
+  }
+  const rem=clubs.slice(offset);
+  for (let i=0;i<rem.length;i+=32) {
+    const s=rem.slice(i,i+32); if(!s.length) break;
+    tiers.push({name:rem.length<=32?'Aspirants':`Aspirants ${aspNum}`,cls:'cup-aspirants',clubs:s}); aspNum++;
+  }
+  return tiers;
+}
 
-  // Global rank counter
-  let globalRank = 1;
-
-  // Render cup tiers
+function renderCupTab(results, failed) {
+  const el = document.getElementById('cupContent');
+  el.innerHTML='';
+  document.getElementById('emptyStateCup').style.display='none';
+  const allRanked = results.filter(r=>r.playerCount>=11).sort((a,b)=>b.top11-a.top11);
+  const tiers = assignTiers(allRanked);
+  let rank=1;
   for (const tier of tiers) {
-    const section = document.createElement('div');
-    section.className = `cup-section`;
-
-    const header = document.createElement('div');
-    header.className = 'cup-header';
-    header.innerHTML = `
-      <span class="cup-badge ${tier.cls}" style="color:var(--cup-color)">${tier.name.split(' ')[0].toUpperCase()}</span>
-      <span class="cup-name ${tier.cls}" style="color:var(--cup-color)">${tier.name}</span>
-      <span class="cup-count">${tier.clubs.length} clubs</span>
-    `;
-    section.appendChild(header);
-
-    const grid = document.createElement('div');
-    grid.className = 'team-grid';
-
-    for (const club of tier.clubs) {
-      const isPartial = club.playerCount >= 11 && club.playerCount <= 15;
-      const card = document.createElement('div');
-      card.className = `team-card ${tier.cls}`;
-      card.innerHTML = `
-        <span class="team-rank">#${globalRank}</span>
-        <a href="https://app.playmfl.com/clubs/${club.clubId}/squad" target="_blank" rel="noopener" class="team-color-swatch" style="background:${club.mainColor};border:2px solid ${club.secondaryColor};text-decoration:none;" title="View squad">${initials(club.clubName)}</a>
-        <div class="team-info">
-          <a href="https://app.playmfl.com/clubs/${club.clubId}/squad" target="_blank" rel="noopener" class="team-name team-link">${club.clubName}</a>
-          <div class="team-meta">Div ${club.division} · ${club.playerCount} players</div>
-          ${isPartial ? '<span class="tag tag-partial">⚠ PARTIAL SQUAD</span>' : ''}
-        </div>
-        <div class="team-ovr" style="color:var(--cup-color)">${club.top11}<small>TOP-11 OVR</small></div>
-      `;
-      grid.appendChild(card);
-      globalRank++;
+    const sec=document.createElement('div'); sec.className='cup-section';
+    sec.innerHTML=`<div class="cup-header"><span class="cup-badge ${tier.cls}" style="color:var(--cup-color)">${tier.name.split(' ')[0].toUpperCase()}</span><span class="cup-name ${tier.cls}" style="color:var(--cup-color)">${tier.name}</span><span class="cup-count">${tier.clubs.length} clubs</span></div>`;
+    const grid=document.createElement('div'); grid.className='team-grid';
+    for (const c of tier.clubs) {
+      const partial=c.playerCount>=11&&c.playerCount<=15;
+      const card=document.createElement('div'); card.className=`team-card ${tier.cls}`;
+      card.innerHTML=`<span class="team-rank">#${rank}</span><a href="https://app.playmfl.com/clubs/${c.clubId}/squad" target="_blank" rel="noopener" class="team-color-swatch" style="background:${c.mainColor};border:2px solid ${c.secondaryColor};text-decoration:none" title="View squad">${initials(c.clubName)}</a><div class="team-info"><a href="https://app.playmfl.com/clubs/${c.clubId}/squad" target="_blank" rel="noopener" class="team-name team-link">${c.clubName}</a><div class="team-meta">Div ${c.division} · ${c.playerCount} players</div>${partial?'<span class="tag tag-partial">⚠ PARTIAL</span>':''}</div><div class="team-ovr" style="color:var(--cup-color)">${c.top11}<small>TOP-11 OVR</small></div>`;
+      grid.appendChild(card); rank++;
     }
-
-    section.appendChild(grid);
-    main.appendChild(section);
+    sec.appendChild(grid); el.appendChild(sec);
   }
 
-  // Incomplete squads section
-  if (incomplete.length > 0) {
-    const section = document.createElement('div');
-    section.className = 'incomplete-section';
-    section.innerHTML = `
-      <div class="incomplete-header">
-        <span class="incomplete-title">⚠ Incomplete Squads</span>
+  const incomplete=results.filter(r=>r.playerCount<=10);
+  if (incomplete.length) {
+    const sec=document.createElement('div'); sec.className='incomplete-section';
+    sec.innerHTML=`<span class="incomplete-title">⚠ Incomplete Squads</span><span style="font-size:0.72rem;color:var(--muted);margin-left:10px;font-family:'JetBrains Mono',monospace">10 or fewer players — unranked</span>`;
+    const grid=document.createElement('div'); grid.className='incomplete-grid';
+    for (const c of incomplete.sort((a,b)=>b.playerCount-a.playerCount)) {
+      const card=document.createElement('div'); card.className='incomplete-card';
+      card.innerHTML=`<a href="https://app.playmfl.com/clubs/${c.clubId}/squad" target="_blank" rel="noopener" class="team-color-swatch" style="background:${c.mainColor};border:2px solid ${c.secondaryColor};width:26px;height:26px;font-size:0.52rem;text-decoration:none">${initials(c.clubName)}</a><div class="team-info"><a href="https://app.playmfl.com/clubs/${c.clubId}/squad" target="_blank" rel="noopener" class="team-name team-link" style="font-size:0.8rem">${c.clubName}</a><div class="team-meta">Div ${c.division}</div></div><span class="incomplete-badge">${c.playerCount}</span>`;
+      grid.appendChild(card);
+    }
+    sec.appendChild(grid); el.appendChild(sec);
+  }
+
+  if (failed.length) {
+    const d=document.createElement('div');
+    d.style.cssText='margin-top:20px;padding:12px;background:rgba(224,82,82,0.05);border:1px solid rgba(224,82,82,0.15);border-radius:8px;';
+    d.innerHTML=`<p style="font-family:'Bebas Neue',sans-serif;font-size:0.95rem;color:var(--danger);letter-spacing:0.05em;margin-bottom:4px">⚠ Failed (${failed.length})</p><p style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--muted)">${failed.join(', ')}</p>`;
+    el.appendChild(d);
+  }
+}
+
+// ============================================================
+// LEAGUE TAB RENDER
+// ============================================================
+function renderLeagueTab(results) {
+  document.getElementById('emptyStateLeague').style.display='none';
+  document.getElementById('leagueContent').style.display='block';
+
+  const tabsEl=document.getElementById('leagueTabs');
+  const panelsEl=document.getElementById('leaguePanels');
+  tabsEl.innerHTML=''; panelsEl.innerHTML='';
+
+  for (const div of DIVISIONS) {
+    const color=LEAGUE_COLORS[div];
+    const clubs=results.filter(r=>r.division===div);
+    const isActive=div===activeLeagueDiv;
+
+    const btn=document.createElement('button');
+    btn.className='league-tab-btn'+(isActive?' active':'');
+    btn.dataset.div=div;
+    if(isActive){btn.style.background=color;btn.style.color='#0a0a0f';btn.style.borderColor=color;}
+    btn.textContent=`${LEAGUE_NAMES[div]} (${clubs.length})`;
+    btn.onclick=()=>switchLeague(div);
+    tabsEl.appendChild(btn);
+
+    const metric=metricByDiv[div]||'top11';
+    const panel=document.createElement('div');
+    panel.className='league-panel'+(isActive?' active':'');
+    panel.dataset.div=div;
+    panel.id=`league-panel-${div}`;
+    panel.innerHTML=`
+      <div class="league-header">
+        <div>
+          <div class="league-title" style="color:${color}">${LEAGUE_NAMES[div]} League</div>
+          <div class="league-subtitle">${clubs.length} clubs · ${clubs.filter(c=>c.playerCount>=11).length} eligible · ${clubs.filter(c=>c.playerCount<=10).length} incomplete</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div class="metric-selector">
+            <button class="metric-btn${metric==='top11'?' active':''}" data-div="${div}" data-metric="top11" onclick="switchMetric('top11',${div})">Top 11</button>
+            <button class="metric-btn${metric==='top16'?' active':''}" data-div="${div}" data-metric="top16" onclick="switchMetric('top16',${div})">Top 16</button>
+            <button class="metric-btn${metric==='full'?' active':''}" data-div="${div}" data-metric="full" onclick="switchMetric('full',${div})">Full Squad</button>
+          </div>
+          <button class="btn btn-secondary" id="btn-div-${div}" onclick="updateDivision(${div})">⟳ Update</button>
+        </div>
       </div>
-      <p class="incomplete-desc" style="margin-bottom:16px;font-size:0.8rem;color:var(--muted)">These clubs have 10 or fewer players and cannot be ranked.</p>
+      <div id="ls-stats-${div}"></div>
+      <div id="ls-charts-${div}"></div>
+      <div id="ls-table-${div}"></div>
     `;
-    const grid = document.createElement('div');
-    grid.className = 'incomplete-grid';
-    for (const club of incomplete.sort((a, b) => b.playerCount - a.playerCount)) {
-      const card = document.createElement('div');
-      card.className = 'incomplete-card';
-      card.innerHTML = `
-        <a href="https://app.playmfl.com/clubs/${club.clubId}/squad" target="_blank" rel="noopener" class="team-color-swatch" style="background:${club.mainColor};border:2px solid ${club.secondaryColor};width:28px;height:28px;font-size:0.55rem;text-decoration:none;" title="View squad">${initials(club.clubName)}</a>
-        <div class="team-info">
-          <a href="https://app.playmfl.com/clubs/${club.clubId}/squad" target="_blank" rel="noopener" class="team-name team-link">${club.clubName}</a>
-          <div class="team-meta">Div ${club.division}</div>
-        </div>
-        <span class="incomplete-badge">${club.playerCount} players</span>
-      `;
-      grid.appendChild(card);
-    }
-    section.appendChild(grid);
-    main.appendChild(section);
+    panelsEl.appendChild(panel);
   }
 
-  // Failed clubs
-  if (failed.length > 0) {
-    const section = document.createElement('div');
-    section.style.cssText = 'margin-top:32px;padding:16px;background:rgba(224,82,82,0.05);border:1px solid rgba(224,82,82,0.15);border-radius:10px;';
-    section.innerHTML = `
-      <p style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--danger);letter-spacing:0.05em;margin-bottom:8px;">⚠ Failed to fetch (${failed.length})</p>
-      <p style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--muted)">Club IDs: ${failed.join(', ')}</p>
-    `;
-    main.appendChild(section);
+  // Render stats+charts for all (deferred so DOM exists)
+  for (const div of DIVISIONS) {
+    const clubs=results.filter(r=>r.division===div);
+    const metric=metricByDiv[div]||'top11';
+    setTimeout(()=>renderLeagueStatsAndCharts(div, clubs, metric), 50);
   }
 }
 
-// ============================================================
-// PROGRESS HELPERS
-// ============================================================
-function updateProgress(done, total, label, remainingMs) {
-  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-  document.getElementById('progressFill').style.width = pct + '%';
-  document.getElementById('progressLabel').textContent = label;
-  document.getElementById('progressStats').textContent = `${done} / ${total} (${pct}%)`;
-  if (remainingMs !== null) {
-    document.getElementById('progressSub').textContent = remainingMs > 0
-      ? `Est. remaining: ${formatTime(remainingMs)}`
-      : 'Almost done…';
+function renderLeagueStatsAndCharts(div, clubs, metric) {
+  const eligible=clubs.filter(c=>c.playerCount>=11);
+  const vals=getVals(eligible, metric);
+  const stats=calcStats(vals);
+  const color=LEAGUE_COLORS[div];
+
+  // Stats cards
+  const statsEl=document.getElementById(`ls-stats-${div}`);
+  if (statsEl && stats) {
+    statsEl.innerHTML=`
+      <div class="stats-grid">
+        <div class="stat-card highlight"><div class="stat-val" style="color:${color}">${stats.top1}</div><div class="stat-lbl">TOP 1% AVG</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:${color}">${stats.top5}</div><div class="stat-lbl">TOP 5% AVG</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:${color}">${stats.top10}</div><div class="stat-lbl">TOP 10% AVG</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:${color}">${stats.top25}</div><div class="stat-lbl">TOP 25% AVG</div></div>
+        <div class="stat-card"><div class="stat-val">${stats.mean}</div><div class="stat-lbl">MEAN</div></div>
+        <div class="stat-card"><div class="stat-val">${stats.median}</div><div class="stat-lbl">MEDIAN</div></div>
+        <div class="stat-card"><div class="stat-val">${stats.mid10}</div><div class="stat-lbl">MIDDLE 10%</div></div>
+        <div class="stat-card"><div class="stat-val">${stats.mid25}</div><div class="stat-lbl">MIDDLE 25%</div></div>
+        <div class="stat-card"><div class="stat-val">${stats.bot25}</div><div class="stat-lbl">BOTTOM 25%</div></div>
+        <div class="stat-card"><div class="stat-val">${stats.bot10}</div><div class="stat-lbl">BOTTOM 10%</div></div>
+        <div class="stat-card"><div class="stat-val">${stats.bot5}</div><div class="stat-lbl">BOTTOM 5%</div></div>
+        <div class="stat-card highlight"><div class="stat-val" style="color:${color}">${stats.max}</div><div class="stat-lbl">HIGHEST</div></div>
+        <div class="stat-card"><div class="stat-val">${stats.min}</div><div class="stat-lbl">LOWEST</div></div>
+        <div class="stat-card"><div class="stat-val">${stats.n}</div><div class="stat-lbl">ELIGIBLE CLUBS</div></div>
+      </div>`;
+  }
+
+  // Charts
+  const chartsEl=document.getElementById(`ls-charts-${div}`);
+  if (chartsEl && stats) {
+    chartsEl.innerHTML=`
+      <div class="charts-row">
+        <div class="chart-card"><div class="chart-title">OVR Distribution</div><div class="chart-wrap"><canvas id="ch-dist-${div}"></canvas></div></div>
+        <div class="chart-card"><div class="chart-title">Strength Percentiles</div><div class="chart-wrap"><canvas id="ch-pct-${div}"></canvas></div></div>
+      </div>
+      <div class="charts-row">
+        <div class="chart-card"><div class="chart-title">Top 20 Clubs</div><div class="chart-wrap-tall"><canvas id="ch-top-${div}"></canvas></div></div>
+        <div class="chart-card"><div class="chart-title">Squad Strength Bands</div><div class="chart-wrap"><canvas id="ch-band-${div}"></canvas></div></div>
+      </div>`;
+
+    // Destroy old
+    ['dist','pct','top','band'].forEach(k=>{
+      const key=`${k}-${div}`;
+      if(chartInstances[key]){chartInstances[key].destroy();delete chartInstances[key];}
+    });
+
+    const baseOpts={
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#6b6b80',font:{size:10}},grid:{color:'rgba(42,42,58,0.5)'}},
+        y:{ticks:{color:'#6b6b80',font:{size:10}},grid:{color:'rgba(42,42,58,0.5)'}}
+      }
+    };
+
+    // Distribution
+    const dCtx=document.getElementById(`ch-dist-${div}`)?.getContext('2d');
+    if(dCtx) chartInstances[`dist-${div}`]=new Chart(dCtx,{
+      type:'bar',
+      data:{labels:stats.dist.map(b=>b.label),datasets:[{data:stats.dist.map(b=>b.count),backgroundColor:color+'88',borderColor:color,borderWidth:1,borderRadius:3}]},
+      options:{...baseOpts,plugins:{...baseOpts.plugins,tooltip:{callbacks:{title:d=>`OVR ~${d[0].label}`,label:d=>`${d.raw} clubs`}}}}
+    });
+
+    // Percentile bar
+    const pCtx=document.getElementById(`ch-pct-${div}`)?.getContext('2d');
+    const pLabels=['Top 1%','Top 5%','Top 10%','Top 25%','Median','Bot 25%','Bot 10%','Bot 5%'];
+    const pVals=[stats.top1,stats.top5,stats.top10,stats.top25,stats.median,stats.bot25,stats.bot10,stats.bot5];
+    if(pCtx) chartInstances[`pct-${div}`]=new Chart(pCtx,{
+      type:'bar',
+      data:{labels:pLabels,datasets:[{data:pVals,backgroundColor:pVals.map((_,i)=>`hsla(${35+i*12},70%,55%,0.75)`),borderRadius:3}]},
+      options:{...baseOpts}
+    });
+
+    // Top 20
+    const top20=eligible.slice().sort((a,b)=>(metric==='top11'?b.top11-a.top11:metric==='top16'?b.top16-a.top16:b.topFull-a.topFull)).slice(0,20);
+    const tCtx=document.getElementById(`ch-top-${div}`)?.getContext('2d');
+    if(tCtx) chartInstances[`top-${div}`]=new Chart(tCtx,{
+      type:'bar',
+      data:{
+        labels:top20.map(c=>c.clubName.length>15?c.clubName.slice(0,14)+'…':c.clubName),
+        datasets:[{data:top20.map(c=>metric==='top11'?c.top11:metric==='top16'?c.top16:c.topFull),backgroundColor:color+'99',borderColor:color,borderWidth:1,borderRadius:3}]
+      },
+      options:{...baseOpts,indexAxis:'y'}
+    });
+
+    // Bands doughnut
+    const bandData=buildBands(vals,stats);
+    const bCtx=document.getElementById(`ch-band-${div}`)?.getContext('2d');
+    if(bCtx) chartInstances[`band-${div}`]=new Chart(bCtx,{
+      type:'doughnut',
+      data:{
+        labels:bandData.map(b=>b.label),
+        datasets:[{data:bandData.map(b=>b.count),backgroundColor:bandData.map((_,i)=>`hsla(${25+i*28},65%,55%,0.85)`),borderColor:'rgba(0,0,0,0.25)',borderWidth:2}]
+      },
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#6b6b80',font:{size:10},boxWidth:12}}}}
+    });
+  }
+
+  // Table
+  const tableEl=document.getElementById(`ls-table-${div}`);
+  if(tableEl && eligible.length) {
+    const sorted=eligible.slice().sort((a,b)=>metric==='top11'?b.top11-a.top11:metric==='top16'?b.top16-a.top16:b.topFull-a.topFull);
+    const maxV=sorted[0]?getVals([sorted[0]],metric)[0]:1;
+    const rows=sorted.map((c,i)=>{
+      const v=metric==='top11'?c.top11:metric==='top16'?c.top16:c.topFull;
+      const pctLabel=i===0?'Top':'Top '+Math.max(1,Math.round((i/sorted.length)*100))+'%';
+      const barW=Math.round((v/maxV)*100);
+      return `<tr><td style="color:var(--muted)">#${i+1}</td><td><a href="https://app.playmfl.com/clubs/${c.clubId}/squad" target="_blank" rel="noopener" class="team-link">${c.clubName}</a></td><td><span class="ovr-val" style="color:${color}">${v}</span></td><td><div class="range-bar"><div class="range-fill" style="width:${barW}px;background:${color}"></div></div></td><td style="color:var(--muted);font-size:0.68rem">${pctLabel}</td><td style="color:var(--muted)">${c.playerCount}p</td></tr>`;
+    }).join('');
+    tableEl.innerHTML=`<div class="percentile-section" style="margin-top:20px"><div class="section-title">Full Rankings — ${LEAGUE_NAMES[div]} League</div><table class="percentile-table"><thead><tr><th>#</th><th>Club</th><th>OVR</th><th>Bar</th><th>Percentile</th><th>Squad</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   }
 }
 
-function updateProgressLabel(text) {
-  document.getElementById('progressLabel').textContent = text;
-}
-
-function showError(msg) {
-  const el = document.getElementById('errorBanner');
-  el.textContent = msg;
-  el.classList.add('visible');
-}
-
-function hideError() {
-  document.getElementById('errorBanner').classList.remove('visible');
-}
-
-function updateLastUpdated(iso) {
-  const d = new Date(iso);
-  document.getElementById('lastUpdated').textContent = `Updated: ${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;
+function buildBands(vals, stats) {
+  const boundaries=[{lo:stats.p90,hi:Infinity,label:'Top 10%'},{lo:stats.p75,hi:stats.p90,label:'P75–90'},{lo:stats.p50,hi:stats.p75,label:'P50–75'},{lo:stats.p25,hi:stats.p50,label:'P25–50'},{lo:stats.p10,hi:stats.p25,label:'P10–25'},{lo:0,hi:stats.p10,label:'Bottom 10%'}];
+  return boundaries.map(b=>({label:b.label,count:vals.filter(v=>v>b.lo&&v<=b.hi).length}));
 }
 
 // ============================================================
-// LOAD FROM CACHE ON PAGE LOAD
+// STORAGE + UI HELPERS
 // ============================================================
-(function loadCache() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return;
-    const snap = JSON.parse(raw);
-    if (!snap.results) return;
+const saveSnapshot = snap => { try{localStorage.setItem(STORAGE_KEY,JSON.stringify(snap));}catch(e){} };
+const loadSnapshot = () => { try{const r=localStorage.getItem(STORAGE_KEY);return r?JSON.parse(r):null;}catch(e){return null;} };
 
-    updateLastUpdated(snap.updatedAt);
-    document.getElementById('emptyState').style.display = 'none';
-    renderRankings(snap.results, snap.failed || []);
-  } catch(e) {
-    // ignore corrupt cache
-  }
+function updateProgress(done,total,label,remainingMs){
+  const pct=total>0?Math.round((done/total)*100):0;
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressLabel').textContent=label;
+  document.getElementById('progressStats').textContent=`${done} / ${total} (${pct}%)`;
+  if(remainingMs!==null) document.getElementById('progressSub').textContent=remainingMs>0?`Est. remaining: ${formatTime(remainingMs)}`:'Almost done…';
+}
+const updateProgressLabel = t => document.getElementById('progressLabel').textContent=t;
+function showError(msg){const el=document.getElementById('errorBanner');el.textContent=msg;el.classList.toggle('visible',!!msg);}
+const hideError = () => document.getElementById('errorBanner').classList.remove('visible');
+function updateLastUpdated(iso){const d=new Date(iso);document.getElementById('lastUpdated').textContent=`Updated: ${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;}
+
+// ============================================================
+// BOOT FROM CACHE
+// ============================================================
+(()=>{
+  const snap=loadSnapshot();
+  if(!snap||!snap.results)return;
+  updateLastUpdated(snap.updatedAt);
+  renderAll(snap.results, snap.failed||[]);
 })();
 </script>
 </body>
