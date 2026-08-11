@@ -20,6 +20,10 @@
   --danger: #e05252;
   --warning: #e09a3a;
   --success: #4caf7d;
+  --retire-none: #4caf7d;
+  --retire-yellow: #facc15;
+  --retire-orange: #fb923c;
+  --retire-red: #ef4444;
   --titans: #ffd700;
   --elite: #c084fc;
   --contender: #60a5fa;
@@ -92,6 +96,13 @@ body::before { content:''; position:fixed; inset:0; background-image:linear-grad
 .team-info { flex:1; min-width:0; }
 .team-name { font-size:0.85rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text); }
 .team-meta { font-size:0.7rem; color:var(--muted); margin-top:2px; font-family:'JetBrains Mono',monospace; }
+.retirement-strip { display:flex; align-items:center; gap:4px; flex-wrap:wrap; margin-top:6px; }
+.retirement-chip { display:inline-flex; align-items:center; gap:3px; min-height:20px; padding:2px 5px; border:1px solid currentColor; border-radius:4px; background:color-mix(in srgb,currentColor 10%,transparent); font-family:'JetBrains Mono',monospace; font-size:0.58rem; font-weight:600; line-height:1; white-space:nowrap; }
+.retirement-chip strong { color:var(--text); font-size:0.64rem; }
+.retirement-none { color:var(--retire-none); }
+.retirement-yellow { color:var(--retire-yellow); }
+.retirement-orange { color:var(--retire-orange); }
+.retirement-red { color:var(--retire-red); }
 .team-ovr { font-family:'Bebas Neue',sans-serif; font-size:1.4rem; letter-spacing:0.03em; min-width:46px; text-align:right; }
 .team-ovr small { display:block; font-family:'DM Sans',sans-serif; font-size:0.6rem; color:var(--muted); letter-spacing:0; font-weight:400; margin-top:-4px; }
 .tag { font-size:0.6rem; padding:2px 5px; border-radius:3px; font-family:'JetBrains Mono',monospace; font-weight:600; letter-spacing:0.04em; display:inline-block; margin-top:3px; }
@@ -107,7 +118,7 @@ body::before { content:''; position:fixed; inset:0; background-image:linear-grad
 
 .incomplete-section { margin-top:40px; padding-top:24px; border-top:2px dashed rgba(248,113,113,0.3); }
 .incomplete-title { font-family:'Bebas Neue',sans-serif; font-size:1.2rem; letter-spacing:0.05em; color:var(--incomplete); }
-.incomplete-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:8px; margin-top:12px; }
+.incomplete-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:8px; margin-top:12px; }
 .incomplete-card { background:rgba(248,113,113,0.04); border:1px solid rgba(248,113,113,0.15); border-radius:8px; padding:10px 14px; display:flex; align-items:center; gap:10px; }
 .incomplete-badge { font-family:'JetBrains Mono',monospace; font-size:0.68rem; color:var(--incomplete); background:rgba(248,113,113,0.1); border:1px solid rgba(248,113,113,0.2); padding:3px 7px; border-radius:4px; white-space:nowrap; margin-left:auto; }
 
@@ -129,6 +140,9 @@ body::before { content:''; position:fixed; inset:0; background-image:linear-grad
 .stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; margin-bottom:24px; }
 .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px; text-align:center; }
 .stat-card.highlight { border-color:rgba(201,168,76,0.3); background:rgba(201,168,76,0.04); }
+.stat-card.retirement-stat { position:relative; overflow:hidden; text-align:left; }
+.stat-card.retirement-stat::before { content:''; position:absolute; inset:0 auto 0 0; width:3px; background:currentColor; }
+.stat-card.retirement-stat .stat-val { color:currentColor; }
 .stat-val { font-family:'Bebas Neue',sans-serif; font-size:1.8rem; letter-spacing:0.03em; color:var(--accent); line-height:1; }
 .stat-lbl { font-size:0.62rem; color:var(--muted); margin-top:4px; font-family:'JetBrains Mono',monospace; letter-spacing:0.04em; }
 
@@ -142,6 +156,7 @@ body::before { content:''; position:fixed; inset:0; background-image:linear-grad
 /* TABLE */
 .percentile-section { margin-bottom:24px; }
 .section-title { font-family:'Bebas Neue',sans-serif; font-size:1.15rem; letter-spacing:0.05em; color:var(--text); margin-bottom:10px; }
+.table-scroll { overflow-x:auto; border:1px solid var(--border); border-radius:10px; }
 .percentile-table { width:100%; border-collapse:collapse; font-size:0.78rem; }
 .percentile-table th { font-family:'JetBrains Mono',monospace; font-size:0.62rem; letter-spacing:0.06em; color:var(--muted); text-align:left; padding:7px 10px; border-bottom:1px solid var(--border); }
 .percentile-table td { padding:7px 10px; border-bottom:1px solid rgba(42,42,58,0.4); font-family:'JetBrains Mono',monospace; }
@@ -149,6 +164,7 @@ body::before { content:''; position:fixed; inset:0; background-image:linear-grad
 .ovr-val { font-weight:600; }
 .range-bar { display:flex; align-items:center; gap:6px; }
 .range-fill { height:4px; border-radius:2px; min-width:3px; opacity:0.7; }
+.retirement-cell { font-weight:600; text-align:center; }
 
 @media (max-width:768px) {
   .charts-row { grid-template-columns:1fr; }
@@ -181,7 +197,7 @@ body::before { content:''; position:fixed; inset:0; background-image:linear-grad
 
 <div class="progress-wrap" id="progressWrap">
   <div class="progress-info">
-    <span class="progress-label" id="progressLabel">Loading…</span>
+    <span class="progress-label" id="progressLabel" role="status" aria-live="polite">Loading…</span>
     <span class="progress-stats" id="progressStats">0 / 0</span>
   </div>
   <div class="progress-bar-track"><div class="progress-bar-fill" id="progressFill"></div></div>
@@ -196,6 +212,10 @@ body::before { content:''; position:fixed; inset:0; background-image:linear-grad
   <div class="stat-pill"><div class="dot" style="background:var(--warning)"></div><span>Partial:</span><strong id="statPartial">—</strong></div>
   <div class="stat-pill"><div class="dot" style="background:var(--danger)"></div><span>Incomplete:</span><strong id="statIncomplete">—</strong></div>
   <div class="stat-pill"><div class="dot" style="background:var(--muted)"></div><span>Failed:</span><strong id="statFailed">—</strong></div>
+  <div class="stat-pill"><div class="dot" style="background:var(--retire-none)"></div><span>None retiring:</span><strong id="statRetireNone">—</strong></div>
+  <div class="stat-pill"><div class="dot" style="background:var(--retire-yellow)"></div><span>3 seasons:</span><strong id="statRetireYellow">—</strong></div>
+  <div class="stat-pill"><div class="dot" style="background:var(--retire-orange)"></div><span>2 seasons:</span><strong id="statRetireOrange">—</strong></div>
+  <div class="stat-pill"><div class="dot" style="background:var(--retire-red)"></div><span>1 season:</span><strong id="statRetireRed">—</strong></div>
 </div>
 
 <div class="content">
@@ -245,28 +265,17 @@ const CUP_TIERS = [
   {name:'Rivals 15',cls:'cup-rivals',size:32},{name:'Rivals 16',cls:'cup-rivals',size:32},
 ];
 
+const PLAYER_BATCH_LIMIT = 1500;
+const MAX_PLAYER_BATCHES = 250;
 const DELAY_MS = 80;
 const COOLDOWNS = [90000, 120000, 180000];
-const ROTATE_EVERY = 25;
-const STORAGE_KEY = 'mfl_rankings_v2';
-
-const HEADER_SETS = [
-  {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36','Accept':'application/json','Referer':'https://app.playmfl.com/','Origin':'https://app.playmfl.com'},
-  {'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/119.0.0.0 Safari/537.36','Accept':'application/json','Referer':'https://app.playmfl.com/','Origin':'https://app.playmfl.com'},
-  {'User-Agent':'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/118.0.0.0 Safari/537.36','Accept':'application/json','Referer':'https://app.playmfl.com/','Origin':'https://app.playmfl.com'},
-  {'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0','Accept':'application/json','Referer':'https://app.playmfl.com/','Origin':'https://app.playmfl.com'},
-  {'User-Agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Version/17.1 Safari/605.1.15','Accept':'application/json','Referer':'https://app.playmfl.com/','Origin':'https://app.playmfl.com'},
-];
+const STORAGE_KEY = 'mfl_rankings_v3';
 
 // ============================================================
 // STATE
 // ============================================================
 let requestCount = 0;
 let isRunning = false;
-let startTime = null;
-let completedCount = 0;
-let failedCount = 0;
-let activeTab = 'cup';
 let activeLeagueDiv = 1;
 let metricByDiv = {};
 let chartInstances = {};
@@ -274,13 +283,74 @@ let chartInstances = {};
 // ============================================================
 // UTILS
 // ============================================================
-const getHeaders = () => HEADER_SETS[Math.floor(requestCount / ROTATE_EVERY) % HEADER_SETS.length];
+const getHeaders = () => ({'Accept':'application/json'});
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const initials = name => name.split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);
-const formatTime = ms => ms < 60000 ? `${Math.round(ms/1000)}s` : `${Math.floor(ms/60000)}m ${Math.round((ms%60000)/1000)}s`;
+const formatNumber = value => Number(value||0).toLocaleString();
 
-function topNOVR(players, n) {
-  return players.map(p => p.metadata?.overall || 0).sort((a,b)=>b-a).slice(0,n).reduce((s,v)=>s+v,0);
+function topNOVR(overalls, n) {
+  return [...overalls].sort((a,b)=>b-a).slice(0,n).reduce((s,v)=>s+v,0);
+}
+
+function createPlayerAccumulator() {
+  return {seenPlayerIds:new Set(),clubsById:new Map(),playerCount:0,unassignedCount:0};
+}
+
+function addPlayerBatch(accumulator,players) {
+  for(const player of players) {
+    const playerId=Number(player?.id);
+    if(!Number.isFinite(playerId)||accumulator.seenPlayerIds.has(playerId)) continue;
+    accumulator.seenPlayerIds.add(playerId);
+    accumulator.playerCount++;
+
+    const club=player?.activeContract?.club;
+    if(!club?.id){accumulator.unassignedCount++;continue;}
+    const clubId=Number(club.id);
+    if(!accumulator.clubsById.has(clubId)) {
+      accumulator.clubsById.set(clubId,{club,overalls:[],retirements:{none:0,yellow:0,orange:0,red:0}});
+    }
+    const clubData=accumulator.clubsById.get(clubId);
+    clubData.club=club;
+    clubData.overalls.push(Number(player.metadata?.overall||0));
+    const years=Number(player.metadata?.retirementYears);
+    if(years===3) clubData.retirements.yellow++;
+    else if(years===2) clubData.retirements.orange++;
+    else if(years===1) clubData.retirements.red++;
+    else clubData.retirements.none++;
+  }
+  return accumulator;
+}
+
+function getRetirements(club) {
+  const retirements = club.retirements || {};
+  const yellow = Number(retirements.yellow||0);
+  const orange = Number(retirements.orange||0);
+  const red = Number(retirements.red||0);
+  const none = Number.isFinite(Number(retirements.none))
+    ? Number(retirements.none)
+    : Math.max(0, Number(club.playerCount||0)-yellow-orange-red);
+  return {none,yellow,orange,red};
+}
+
+function aggregateRetirements(clubs) {
+  return clubs.reduce((total,club)=>{
+    const counts=getRetirements(club);
+    total.none+=counts.none;
+    total.yellow+=counts.yellow;
+    total.orange+=counts.orange;
+    total.red+=counts.red;
+    return total;
+  },{none:0,yellow:0,orange:0,red:0});
+}
+
+function retirementChips(club) {
+  const counts=getRetirements(club);
+  return `<div class="retirement-strip" aria-label="Retirement outlook: ${counts.none} not retiring, ${counts.yellow} in 3 seasons, ${counts.orange} in 2 seasons, ${counts.red} in 1 season">
+    <span class="retirement-chip retirement-none" title="Not retiring within 3 seasons">NONE <strong>${counts.none}</strong></span>
+    <span class="retirement-chip retirement-yellow" title="Retiring in 3 seasons">3Y <strong>${counts.yellow}</strong></span>
+    <span class="retirement-chip retirement-orange" title="Retiring in 2 seasons">2Y <strong>${counts.orange}</strong></span>
+    <span class="retirement-chip retirement-red" title="Retiring in 1 season">1Y <strong>${counts.red}</strong></span>
+  </div>`;
 }
 
 function getVals(clubs, metric) {
@@ -323,7 +393,6 @@ function buildDist(vals) {
 // TAB SWITCHING
 // ============================================================
 function switchTab(tab) {
-  activeTab = tab;
   document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active',['cup','league'][i]===tab));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id===`panel-${tab}`));
 }
@@ -373,61 +442,76 @@ async function fetchWithRetry(url) {
   }
 }
 
-async function fetchAllClubIds() {
-  const seen = new Set();
-  for (let d = 0; d < DIVISIONS.length; d++) {
-    const div = DIVISIONS[d];
-    updateProgress(d, DIVISIONS.length, `Loading ${LEAGUE_NAMES[div]} leaderboard…`, null);
-    try {
-      const data = await fetchWithRetry(`${API_BASE}/leaderboards/clubs/global?division=${div}&sort=nbMflPoints&sortOrder=DESC&limit=20000`);
-      (data.clubs||[]).forEach(c => seen.add(c.id));
-      updateProgressLabel(`${LEAGUE_NAMES[div]}: ${(data.clubs||[]).length} clubs (${seen.size} total)`);
-      await sleep(DELAY_MS);
-    } catch(e) { showError(`Division ${div} failed: ${e.message}`); await sleep(1000); hideError(); }
+async function fetchClubCatalog(divisions=DIVISIONS) {
+  const clubsById = new Map();
+  for (let i=0;i<divisions.length;i++) {
+    const div=divisions[i];
+    updateProgress(i,divisions.length,`Loading ${LEAGUE_NAMES[div]} leaderboard…`);
+    const data=await fetchWithRetry(`${API_BASE}/leaderboards/clubs/global?division=${div}&sort=nbMflPoints&sortOrder=DESC&limit=20000`);
+    for (const club of data.clubs||[]) {
+      clubsById.set(Number(club.id),{
+        clubId:Number(club.id),
+        clubName:club.name||`Club ${club.id}`,
+        division:Number(club.division||div),
+      });
+    }
+    updateProgress(i+1,divisions.length,`${LEAGUE_NAMES[div]}: ${(data.clubs||[]).length} clubs (${clubsById.size} total)`);
+    await sleep(DELAY_MS);
   }
-  return [...seen];
+  return [...clubsById.values()];
 }
 
-async function fetchClubsBatch(ids, filterDiv) {
-  const results = [], failed = [];
-  const total = ids.length;
-  for (let i = 0; i < ids.length; i++) {
-    const clubId = ids[i];
-    if (requestCount > 0 && requestCount % 150 === 0) { updateProgressLabel('⏸ Pausing 30s…'); await sleep(30000); }
-    let ok = false, attempt = 0;
-    while (!ok) {
-      try {
-        const players = await fetchWithRetry(`${API_BASE}/clubs/${clubId}/players`);
-        await sleep(DELAY_MS);
-        if (!Array.isArray(players) || !players.length) {
-          results.push({clubId, clubName:`Club ${clubId}`, mainColor:'#333', secondaryColor:'#555', division:filterDiv||null, playerCount:0, top11:0, top16:0, topFull:0});
-        } else {
-          results.push({
-            clubId,
-            clubName: players[0]?.activeContract?.club?.name || `Club ${clubId}`,
-            mainColor: players[0]?.activeContract?.club?.mainColor || '#333',
-            secondaryColor: players[0]?.activeContract?.club?.secondaryColor || '#555',
-            division: players[0]?.activeContract?.club?.division || filterDiv || null,
-            playerCount: players.length,
-            top11: topNOVR(players,11),
-            top16: topNOVR(players,16),
-            topFull: topNOVR(players, players.length),
-          });
-        }
-        completedCount++;
-        ok = true;
-      } catch(err) {
-        if (err.message === '403' && attempt < 3) {
-          const cd = COOLDOWNS[attempt]||180000;
-          showError(`⚠️ Rate limited club ${clubId} — attempt ${attempt+1}/3, cooling ${cd/1000}s…`);
-          await sleep(cd); hideError(); attempt++;
-        } else { failed.push(clubId); failedCount++; ok = true; }
-      }
-    }
-    const elapsed = Date.now()-startTime, done = i+1;
-    updateProgress(done, total, `Club ${clubId} — ${done}/${total}`, (total-done)*(elapsed/done));
+async function fetchAllContractedPlayers() {
+  const accumulator=createPlayerAccumulator();
+  let beforePlayerId=null;
+  let batchNumber=0;
+
+  while (batchNumber<MAX_PLAYER_BATCHES) {
+    const params=new URLSearchParams({
+      limit:String(PLAYER_BATCH_LIMIT),
+      sorts:'metadata.overall',
+      sortsOrders:'DESC',
+      excludingMflOwned:'false',
+      isFreeAgent:'false',
+    });
+    if(beforePlayerId!==null) params.set('beforePlayerId',String(beforePlayerId));
+
+    const batch=await fetchWithRetry(`${API_BASE}/players?${params.toString()}`);
+    if(!Array.isArray(batch)) throw new Error('Player API returned an invalid response');
+    batchNumber++;
+
+    addPlayerBatch(accumulator,batch);
+
+    updateBulkProgress(batchNumber,accumulator.playerCount,batch.length);
+    if(batch.length<PLAYER_BATCH_LIMIT) return accumulator;
+
+    const nextCursor=Number(batch[batch.length-1]?.id);
+    if(!Number.isFinite(nextCursor)||nextCursor===beforePlayerId) throw new Error('Player pagination cursor did not advance');
+    beforePlayerId=nextCursor;
+    await sleep(DELAY_MS);
   }
-  return {results, failed};
+
+  throw new Error(`Player pagination exceeded ${MAX_PLAYER_BATCHES} batches`);
+}
+
+function buildClubResults(catalog,playerData) {
+  return catalog.map(source=>{
+    const group=playerData.clubsById.get(Number(source.clubId));
+    const overalls=group?.overalls||[];
+    const liveClub=group?.club;
+    return {
+      clubId:Number(source.clubId),
+      clubName:liveClub?.name||source.clubName||`Club ${source.clubId}`,
+      mainColor:liveClub?.mainColor||'#333',
+      secondaryColor:liveClub?.secondaryColor||'#555',
+      division:Number(liveClub?.division||source.division||0),
+      playerCount:overalls.length,
+      top11:topNOVR(overalls,11),
+      top16:topNOVR(overalls,16),
+      topFull:overalls.reduce((sum,overall)=>sum+overall,0),
+      retirements:group?.retirements||{none:0,yellow:0,orange:0,red:0},
+    };
+  });
 }
 
 // ============================================================
@@ -435,39 +519,36 @@ async function fetchClubsBatch(ids, filterDiv) {
 // ============================================================
 async function updateDivision(div) {
   if (isRunning) return;
-  isRunning = true; startTime = Date.now(); requestCount = 0; completedCount = 0; failedCount = 0;
+  isRunning = true; requestCount = 0;
   const btn = document.getElementById(`btn-div-${div}`);
   if (btn) { btn.disabled=true; btn.textContent='⟳ Updating…'; }
   document.getElementById('progressWrap').classList.add('visible');
   document.getElementById('progressFill').style.width='0%';
-
-  updateProgress(0,1,`Loading ${LEAGUE_NAMES[div]} leaderboard…`,null);
-  let ids = [];
   try {
-    const data = await fetchWithRetry(`${API_BASE}/leaderboards/clubs/global?division=${div}&sort=nbMflPoints&sortOrder=DESC&limit=20000`);
-    ids = (data.clubs||[]).map(c=>c.id);
+    hideError();
+    const catalog=await fetchClubCatalog([div]);
+    if(!catalog.length) throw new Error(`No ${LEAGUE_NAMES[div]} clubs found`);
+    const playerData=await fetchAllContractedPlayers();
+    const results=buildClubResults(catalog,playerData);
+
+    const snap=loadSnapshot()||{updatedAt:'',results:[],failed:[]};
+    snap.results=(snap.results||[]).filter(r=>r.division!==div);
+    snap.results.push(...results);
+    snap.failed=[];
+    snap.playerCountFetched=playerData.playerCount;
+    snap.unassignedPlayerCount=playerData.unassignedCount;
+    snap.requestCount=requestCount;
+    snap.updatedAt=new Date().toISOString();
+    saveSnapshot(snap);
+    updateLastUpdated(snap.updatedAt);
+    renderAll(snap.results,snap.failed);
   } catch(e) {
-    showError(`Failed: ${e.message}`);
+    showError(`Update failed: ${e.message}`);
+  } finally {
     document.getElementById('progressWrap').classList.remove('visible');
-    if (btn) { btn.disabled=false; btn.textContent='⟳ Update'; }
-    isRunning=false; return;
+    if(btn){btn.disabled=false;btn.textContent='⟳ Update';}
+    isRunning=false;
   }
-
-  const {results, failed} = await fetchClubsBatch(ids, div);
-  document.getElementById('progressWrap').classList.remove('visible');
-
-  let snap = loadSnapshot() || {updatedAt:'',results:[],failed:[]};
-  snap.results = snap.results.filter(r => r.division !== div);
-  snap.failed = (snap.failed||[]).filter(id => !ids.includes(id));
-  snap.results.push(...results);
-  snap.failed.push(...failed);
-  snap.updatedAt = new Date().toISOString();
-  saveSnapshot(snap);
-  updateLastUpdated(snap.updatedAt);
-  renderAll(snap.results, snap.failed);
-
-  if (btn) { btn.disabled=false; btn.textContent='⟳ Update'; }
-  isRunning=false;
 }
 
 // ============================================================
@@ -475,7 +556,7 @@ async function updateDivision(div) {
 // ============================================================
 async function startUpdate() {
   if (isRunning) return;
-  isRunning=true; requestCount=0; completedCount=0; failedCount=0; startTime=Date.now();
+  isRunning=true; requestCount=0;
   const btn = document.getElementById('btnUpdate');
   btn.disabled=true; btn.textContent='⟳ Fetching…';
   document.getElementById('progressWrap').classList.add('visible');
@@ -485,27 +566,32 @@ async function startUpdate() {
   document.getElementById('statsBar').style.display='none';
   hideError();
 
-  const allIds = await fetchAllClubIds();
-  document.getElementById('subtitle').textContent=`Cup Seedings & League Strength · ${allIds.length} clubs`;
+  try {
+    const catalog=await fetchClubCatalog();
+    if(!catalog.length) throw new Error('No clubs found. API may be unavailable.');
+    document.getElementById('subtitle').textContent=`Cup Seedings & League Strength · ${catalog.length} clubs`;
 
-  if (!allIds.length) {
-    showError('⚠️ No clubs found. API may be unavailable.');
+    const playerData=await fetchAllContractedPlayers();
+    const results=buildClubResults(catalog,playerData);
+    const snap={
+      updatedAt:new Date().toISOString(),
+      results,
+      failed:[],
+      playerCountFetched:playerData.playerCount,
+      unassignedPlayerCount:playerData.unassignedCount,
+      requestCount,
+    };
+    saveSnapshot(snap);
+    updateLastUpdated(snap.updatedAt);
+    renderAll(snap.results,snap.failed);
+  } catch(e) {
+    showError(`Update failed: ${e.message}`);
+  } finally {
     document.getElementById('progressWrap').classList.remove('visible');
-    btn.disabled=false; btn.textContent='⟳ Update All'; isRunning=false; return;
+    btn.disabled=false;
+    btn.textContent='⟳ Update All';
+    isRunning=false;
   }
-
-  const {results, failed} = await fetchClubsBatch(allIds, null);
-  document.getElementById('progressWrap').classList.remove('visible');
-
-  const snap = {
-    updatedAt: new Date().toISOString(),
-    results: results.map(r=>({clubId:r.clubId,clubName:r.clubName,mainColor:r.mainColor,secondaryColor:r.secondaryColor,division:r.division,playerCount:r.playerCount,top11:r.top11,top16:r.top16,topFull:r.topFull})),
-    failed
-  };
-  saveSnapshot(snap);
-  updateLastUpdated(snap.updatedAt);
-  renderAll(snap.results, failed);
-  btn.disabled=false; btn.textContent='⟳ Update All'; isRunning=false;
 }
 
 // ============================================================
@@ -517,11 +603,16 @@ function renderAll(results, failed) {
   const ranked = results.filter(r=>r.playerCount>=11);
   const partial = results.filter(r=>r.playerCount>=11&&r.playerCount<=15);
   const incomplete = results.filter(r=>r.playerCount<=10);
+  const retirements = aggregateRetirements(results);
   document.getElementById('statTotal').textContent = results.length;
   document.getElementById('statRanked').textContent = ranked.length;
   document.getElementById('statPartial').textContent = partial.length;
   document.getElementById('statIncomplete').textContent = incomplete.length;
   document.getElementById('statFailed').textContent = failed.length;
+  document.getElementById('statRetireNone').textContent = formatNumber(retirements.none);
+  document.getElementById('statRetireYellow').textContent = formatNumber(retirements.yellow);
+  document.getElementById('statRetireOrange').textContent = formatNumber(retirements.orange);
+  document.getElementById('statRetireRed').textContent = formatNumber(retirements.red);
   document.getElementById('statsBar').style.display='flex';
 }
 
@@ -556,7 +647,7 @@ function renderCupTab(results, failed) {
     for (const c of tier.clubs) {
       const partial=c.playerCount>=11&&c.playerCount<=15;
       const card=document.createElement('div'); card.className=`team-card ${tier.cls}`;
-      card.innerHTML=`<span class="team-rank">#${rank}</span><a href="https://app.playmfl.com/clubs/${c.clubId}/squad" target="_blank" rel="noopener" class="team-color-swatch" style="background:${c.mainColor};border:2px solid ${c.secondaryColor};text-decoration:none" title="View squad">${initials(c.clubName)}</a><div class="team-info"><a href="https://app.playmfl.com/clubs/${c.clubId}/squad" target="_blank" rel="noopener" class="team-name team-link">${c.clubName}</a><div class="team-meta">Div ${c.division} · ${c.playerCount} players</div>${partial?'<span class="tag tag-partial">⚠ PARTIAL</span>':''}</div><div class="team-ovr" style="color:var(--cup-color)">${c.top11}<small>TOP-11 OVR</small></div>`;
+      card.innerHTML=`<span class="team-rank">#${rank}</span><a href="https://app.playmfl.com/clubs/${c.clubId}/squad" target="_blank" rel="noopener" class="team-color-swatch" style="background:${c.mainColor};border:2px solid ${c.secondaryColor};text-decoration:none" title="View squad">${initials(c.clubName)}</a><div class="team-info"><a href="https://app.playmfl.com/clubs/${c.clubId}/squad" target="_blank" rel="noopener" class="team-name team-link">${c.clubName}</a><div class="team-meta">Div ${c.division} · ${c.playerCount} players</div>${retirementChips(c)}${partial?'<span class="tag tag-partial">⚠ PARTIAL</span>':''}</div><div class="team-ovr" style="color:var(--cup-color)">${c.top11}<small>TOP-11 OVR</small></div>`;
       grid.appendChild(card); rank++;
     }
     sec.appendChild(grid); el.appendChild(sec);
@@ -569,7 +660,7 @@ function renderCupTab(results, failed) {
     const grid=document.createElement('div'); grid.className='incomplete-grid';
     for (const c of incomplete.sort((a,b)=>b.playerCount-a.playerCount)) {
       const card=document.createElement('div'); card.className='incomplete-card';
-      card.innerHTML=`<a href="https://app.playmfl.com/clubs/${c.clubId}/squad" target="_blank" rel="noopener" class="team-color-swatch" style="background:${c.mainColor};border:2px solid ${c.secondaryColor};width:26px;height:26px;font-size:0.52rem;text-decoration:none">${initials(c.clubName)}</a><div class="team-info"><a href="https://app.playmfl.com/clubs/${c.clubId}/squad" target="_blank" rel="noopener" class="team-name team-link" style="font-size:0.8rem">${c.clubName}</a><div class="team-meta">Div ${c.division}</div></div><span class="incomplete-badge">${c.playerCount}</span>`;
+      card.innerHTML=`<a href="https://app.playmfl.com/clubs/${c.clubId}/squad" target="_blank" rel="noopener" class="team-color-swatch" style="background:${c.mainColor};border:2px solid ${c.secondaryColor};width:26px;height:26px;font-size:0.52rem;text-decoration:none">${initials(c.clubName)}</a><div class="team-info"><a href="https://app.playmfl.com/clubs/${c.clubId}/squad" target="_blank" rel="noopener" class="team-name team-link" style="font-size:0.8rem">${c.clubName}</a><div class="team-meta">Div ${c.division}</div>${retirementChips(c)}</div><span class="incomplete-badge">${c.playerCount}</span>`;
       grid.appendChild(card);
     }
     sec.appendChild(grid); el.appendChild(sec);
@@ -647,12 +738,12 @@ function renderLeagueStatsAndCharts(div, clubs, metric) {
   const vals=getVals(eligible, metric);
   const stats=calcStats(vals);
   const color=LEAGUE_COLORS[div];
+  const retirements=aggregateRetirements(clubs);
 
   // Stats cards
   const statsEl=document.getElementById(`ls-stats-${div}`);
-  if (statsEl && stats) {
-    statsEl.innerHTML=`
-      <div class="stats-grid">
+  if (statsEl) {
+    const strengthCards=stats?`
         <div class="stat-card highlight"><div class="stat-val" style="color:${color}">${stats.top1}</div><div class="stat-lbl">TOP 1% AVG</div></div>
         <div class="stat-card"><div class="stat-val" style="color:${color}">${stats.top5}</div><div class="stat-lbl">TOP 5% AVG</div></div>
         <div class="stat-card"><div class="stat-val" style="color:${color}">${stats.top10}</div><div class="stat-lbl">TOP 10% AVG</div></div>
@@ -666,7 +757,15 @@ function renderLeagueStatsAndCharts(div, clubs, metric) {
         <div class="stat-card"><div class="stat-val">${stats.bot5}</div><div class="stat-lbl">BOTTOM 5%</div></div>
         <div class="stat-card highlight"><div class="stat-val" style="color:${color}">${stats.max}</div><div class="stat-lbl">HIGHEST</div></div>
         <div class="stat-card"><div class="stat-val">${stats.min}</div><div class="stat-lbl">LOWEST</div></div>
-        <div class="stat-card"><div class="stat-val">${stats.n}</div><div class="stat-lbl">ELIGIBLE CLUBS</div></div>
+        <div class="stat-card"><div class="stat-val">${stats.n}</div><div class="stat-lbl">ELIGIBLE CLUBS</div></div>`:'';
+    statsEl.innerHTML=`
+      <div class="stats-grid">${strengthCards}</div>
+      <div class="section-title">Retirement Outlook — Players</div>
+      <div class="stats-grid">
+        <div class="stat-card retirement-stat retirement-none"><div class="stat-val">${formatNumber(retirements.none)}</div><div class="stat-lbl">NONE RETIRING</div></div>
+        <div class="stat-card retirement-stat retirement-yellow"><div class="stat-val">${formatNumber(retirements.yellow)}</div><div class="stat-lbl">RETIRING IN 3 SEASONS</div></div>
+        <div class="stat-card retirement-stat retirement-orange"><div class="stat-val">${formatNumber(retirements.orange)}</div><div class="stat-lbl">RETIRING IN 2 SEASONS</div></div>
+        <div class="stat-card retirement-stat retirement-red"><div class="stat-val">${formatNumber(retirements.red)}</div><div class="stat-lbl">RETIRING IN 1 SEASON</div></div>
       </div>`;
   }
 
@@ -750,9 +849,10 @@ function renderLeagueStatsAndCharts(div, clubs, metric) {
       const v=metric==='top11'?c.top11:metric==='top16'?c.top16:c.topFull;
       const pctLabel=i===0?'Top':'Top '+Math.max(1,Math.round((i/sorted.length)*100))+'%';
       const barW=Math.round((v/maxV)*100);
-      return `<tr><td style="color:var(--muted)">#${i+1}</td><td><a href="https://app.playmfl.com/clubs/${c.clubId}/squad" target="_blank" rel="noopener" class="team-link">${c.clubName}</a></td><td><span class="ovr-val" style="color:${color}">${v}</span></td><td><div class="range-bar"><div class="range-fill" style="width:${barW}px;background:${color}"></div></div></td><td style="color:var(--muted);font-size:0.68rem">${pctLabel}</td><td style="color:var(--muted)">${c.playerCount}p</td></tr>`;
+      const retirements=getRetirements(c);
+      return `<tr><td style="color:var(--muted)">#${i+1}</td><td><a href="https://app.playmfl.com/clubs/${c.clubId}/squad" target="_blank" rel="noopener" class="team-link">${c.clubName}</a></td><td><span class="ovr-val" style="color:${color}">${v}</span></td><td><div class="range-bar"><div class="range-fill" style="width:${barW}px;background:${color}"></div></div></td><td style="color:var(--muted);font-size:0.68rem">${pctLabel}</td><td style="color:var(--muted)">${c.playerCount}p</td><td class="retirement-cell retirement-none">${retirements.none}</td><td class="retirement-cell retirement-yellow">${retirements.yellow}</td><td class="retirement-cell retirement-orange">${retirements.orange}</td><td class="retirement-cell retirement-red">${retirements.red}</td></tr>`;
     }).join('');
-    tableEl.innerHTML=`<div class="percentile-section" style="margin-top:20px"><div class="section-title">Full Rankings — ${LEAGUE_NAMES[div]} League</div><table class="percentile-table"><thead><tr><th>#</th><th>Club</th><th>OVR</th><th>Bar</th><th>Percentile</th><th>Squad</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    tableEl.innerHTML=`<div class="percentile-section" style="margin-top:20px"><div class="section-title">Full Rankings — ${LEAGUE_NAMES[div]} League</div><div class="table-scroll"><table class="percentile-table"><thead><tr><th>#</th><th>Club</th><th>OVR</th><th>Bar</th><th>Percentile</th><th>Squad</th><th title="Not retiring within 3 seasons">None</th><th title="Retiring in 3 seasons">3Y</th><th title="Retiring in 2 seasons">2Y</th><th title="Retiring in 1 season">1Y</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
   }
 }
 
@@ -767,14 +867,20 @@ function buildBands(vals, stats) {
 const saveSnapshot = snap => { try{localStorage.setItem(STORAGE_KEY,JSON.stringify(snap));}catch(e){} };
 const loadSnapshot = () => { try{const r=localStorage.getItem(STORAGE_KEY);return r?JSON.parse(r):null;}catch(e){return null;} };
 
-function updateProgress(done,total,label,remainingMs){
+function updateProgress(done,total,label){
   const pct=total>0?Math.round((done/total)*100):0;
   document.getElementById('progressFill').style.width=pct+'%';
   document.getElementById('progressLabel').textContent=label;
   document.getElementById('progressStats').textContent=`${done} / ${total} (${pct}%)`;
-  if(remainingMs!==null) document.getElementById('progressSub').textContent=remainingMs>0?`Est. remaining: ${formatTime(remainingMs)}`:'Almost done…';
+  document.getElementById('progressSub').textContent='Loading club catalogue…';
 }
-const updateProgressLabel = t => document.getElementById('progressLabel').textContent=t;
+function updateBulkProgress(batchNumber,playerCount,batchSize){
+  const pct=Math.min(95,10+Math.round(85*(1-Math.exp(-batchNumber/40))));
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressLabel').textContent=`Loading contracted players — batch ${batchNumber}`;
+  document.getElementById('progressStats').textContent=`${formatNumber(playerCount)} players`;
+  document.getElementById('progressSub').textContent=batchSize===PLAYER_BATCH_LIMIT?'More players available…':'Final player batch received';
+}
 function showError(msg){const el=document.getElementById('errorBanner');el.textContent=msg;el.classList.toggle('visible',!!msg);}
 const hideError = () => document.getElementById('errorBanner').classList.remove('visible');
 function updateLastUpdated(iso){const d=new Date(iso);document.getElementById('lastUpdated').textContent=`Updated: ${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;}
