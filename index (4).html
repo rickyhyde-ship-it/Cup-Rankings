@@ -186,6 +186,7 @@ body::before { content:''; position:fixed; inset:0; background-image:linear-grad
   </div>
   <div class="header-right">
     <div class="last-updated" id="lastUpdated">Never updated</div>
+    <button class="btn btn-secondary" id="btnExport" onclick="exportSnapshot()" disabled>⇩ Export Data</button>
     <button class="btn btn-primary" id="btnUpdate" onclick="startUpdate()">⟳ Update All</button>
   </div>
 </header>
@@ -279,6 +280,7 @@ let isRunning = false;
 let activeLeagueDiv = 1;
 let metricByDiv = {};
 let chartInstances = {};
+let currentSnapshot = null;
 
 // ============================================================
 // UTILS
@@ -864,7 +866,34 @@ function buildBands(vals, stats) {
 // ============================================================
 // STORAGE + UI HELPERS
 // ============================================================
-const saveSnapshot = snap => { try{localStorage.setItem(STORAGE_KEY,JSON.stringify(snap));}catch(e){} };
+function setCurrentSnapshot(snap) {
+  currentSnapshot = snap;
+  document.getElementById('btnExport').disabled = !snap?.results?.length;
+}
+
+function exportSnapshot() {
+  const snap = currentSnapshot || loadSnapshot();
+  if (!snap?.results?.length) return;
+  const payload = {
+    ...snap,
+    schemaVersion: 3,
+    source: { repository: 'rickyhyde-ship-it/Cup-Rankings' },
+    divisions: DIVISIONS.map(id => ({ id, name: LEAGUE_NAMES[id] })),
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'league-cup-strengths-data.json';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(link.href);
+}
+
+const saveSnapshot = snap => {
+  setCurrentSnapshot(snap);
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(snap));}catch(e){}
+};
 const loadSnapshot = () => { try{const r=localStorage.getItem(STORAGE_KEY);return r?JSON.parse(r):null;}catch(e){return null;} };
 
 function updateProgress(done,total,label){
@@ -891,6 +920,7 @@ function updateLastUpdated(iso){const d=new Date(iso);document.getElementById('l
 (()=>{
   const snap=loadSnapshot();
   if(!snap||!snap.results)return;
+  setCurrentSnapshot(snap);
   updateLastUpdated(snap.updatedAt);
   renderAll(snap.results, snap.failed||[]);
 })();
