@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cup-rankings-scanner",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-09-21",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "assets": { "directory": "public", "binding": "ASSETS", "run_worker_first": true },
+  "durable_objects": {
+    "bindings": [{ "name": "SCANNER", "class_name": "RankingScanner" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["RankingScanner"] }],
+  "observability": { "enabled": true },
+  "triggers": { "crons": ["* * * * *"] },
+  "vars": {
+    "MFL_API_BASE": "https://api.playmfl.com",
+    "GITHUB_REPOSITORY": "rickyhyde-ship-it/Cup-Rankings",
+    "GITHUB_BRANCH": "main",
+    "SYNC_GITHUB": "false"
+  }
+}

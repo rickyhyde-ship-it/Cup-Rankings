@@ -187,7 +187,7 @@ body::before { content:''; position:fixed; inset:0; background-image:linear-grad
   <div class="header-right">
     <div class="last-updated" id="lastUpdated">Never updated</div>
     <button class="btn btn-secondary" id="btnExport" onclick="exportSnapshot()" disabled>⇩ Export Data</button>
-    <button class="btn btn-primary" id="btnUpdate" onclick="startUpdate()">⟳ Update All</button>
+    <button class="btn btn-primary" id="btnUpdate" onclick="startUpdate()">Open scan dashboard</button>
   </div>
 </header>
 
@@ -242,7 +242,7 @@ body::before { content:''; position:fixed; inset:0; background-image:linear-grad
 // ============================================================
 // CONFIG
 // ============================================================
-const API_BASE = 'https://small-lab-192f.ricky-hyde-selling.workers.dev';
+const API_BASE = 'https://api.playmfl.com';
 const DIVISIONS = [1,2,3,4,5,6,7,8,9,10];
 const LEAGUE_NAMES = {1:'Diamond',2:'Platinum',3:'Gold',4:'Silver',5:'Bronze',6:'Iron',7:'Stone',8:'Ice',9:'Spark',10:'Flint'};
 const LEAGUE_COLORS = {1:'#67e8f9',2:'#c4b5fd',3:'#fbbf24',4:'#cbd5e1',5:'#fb923c',6:'#94a3b8',7:'#a16207',8:'#7dd3fc',9:'#f97316',10:'#d6d3d1'};
@@ -269,7 +269,7 @@ const CUP_TIERS = [
 const PLAYER_BATCH_LIMIT = 1500;
 const MAX_PLAYER_BATCHES = 250;
 const DELAY_MS = 80;
-const COOLDOWNS = [90000, 120000, 180000];
+
 const STORAGE_KEY = 'mfl_rankings_v3';
 
 // ============================================================
@@ -421,180 +421,11 @@ function switchMetric(metric, div) {
 }
 
 // ============================================================
-// FETCH WITH RETRY
+// SCANS RUN IN THE CLOUDFLARE SERVICE (one shared request budget).
 // ============================================================
-async function fetchWithRetry(url) {
-  let attempt = 0;
-  while (true) {
-    try {
-      requestCount++;
-      const res = await fetch(url, { headers: getHeaders() });
-      if (res.status === 403) throw new Error('403');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return await res.json();
-    } catch(err) {
-      if (err.message === '403' && attempt < 3) {
-        const cd = COOLDOWNS[attempt] || 180000;
-        showError(`⚠️ Rate limited — attempt ${attempt+1}/3, cooling down ${cd/1000}s…`);
-        await sleep(cd);
-        hideError();
-        attempt++;
-      } else { throw err; }
-    }
-  }
-}
-
-async function fetchClubCatalog(divisions=DIVISIONS) {
-  const clubsById = new Map();
-  for (let i=0;i<divisions.length;i++) {
-    const div=divisions[i];
-    updateProgress(i,divisions.length,`Loading ${LEAGUE_NAMES[div]} leaderboard…`);
-    const data=await fetchWithRetry(`${API_BASE}/leaderboards/clubs/global?division=${div}&sort=nbMflPoints&sortOrder=DESC&limit=20000`);
-    for (const club of data.clubs||[]) {
-      clubsById.set(Number(club.id),{
-        clubId:Number(club.id),
-        clubName:club.name||`Club ${club.id}`,
-        division:Number(club.division||div),
-      });
-    }
-    updateProgress(i+1,divisions.length,`${LEAGUE_NAMES[div]}: ${(data.clubs||[]).length} clubs (${clubsById.size} total)`);
-    await sleep(DELAY_MS);
-  }
-  return [...clubsById.values()];
-}
-
-async function fetchAllContractedPlayers() {
-  const accumulator=createPlayerAccumulator();
-  let beforePlayerId=null;
-  let batchNumber=0;
-
-  while (batchNumber<MAX_PLAYER_BATCHES) {
-    const params=new URLSearchParams({
-      limit:String(PLAYER_BATCH_LIMIT),
-      sorts:'metadata.overall',
-      sortsOrders:'DESC',
-      excludingMflOwned:'false',
-      isFreeAgent:'false',
-    });
-    if(beforePlayerId!==null) params.set('beforePlayerId',String(beforePlayerId));
-
-    const batch=await fetchWithRetry(`${API_BASE}/players?${params.toString()}`);
-    if(!Array.isArray(batch)) throw new Error('Player API returned an invalid response');
-    batchNumber++;
-
-    addPlayerBatch(accumulator,batch);
-
-    updateBulkProgress(batchNumber,accumulator.playerCount,batch.length);
-    if(batch.length<PLAYER_BATCH_LIMIT) return accumulator;
-
-    const nextCursor=Number(batch[batch.length-1]?.id);
-    if(!Number.isFinite(nextCursor)||nextCursor===beforePlayerId) throw new Error('Player pagination cursor did not advance');
-    beforePlayerId=nextCursor;
-    await sleep(DELAY_MS);
-  }
-
-  throw new Error(`Player pagination exceeded ${MAX_PLAYER_BATCHES} batches`);
-}
-
-function buildClubResults(catalog,playerData) {
-  return catalog.map(source=>{
-    const group=playerData.clubsById.get(Number(source.clubId));
-    const overalls=group?.overalls||[];
-    const liveClub=group?.club;
-    return {
-      clubId:Number(source.clubId),
-      clubName:liveClub?.name||source.clubName||`Club ${source.clubId}`,
-      mainColor:liveClub?.mainColor||'#333',
-      secondaryColor:liveClub?.secondaryColor||'#555',
-      division:Number(liveClub?.division||source.division||0),
-      playerCount:overalls.length,
-      top11:topNOVR(overalls,11),
-      top16:topNOVR(overalls,16),
-      topFull:overalls.reduce((sum,overall)=>sum+overall,0),
-      retirements:group?.retirements||{none:0,yellow:0,orange:0,red:0},
-    };
-  });
-}
-
-// ============================================================
-// SINGLE DIVISION UPDATE
-// ============================================================
-async function updateDivision(div) {
-  if (isRunning) return;
-  isRunning = true; requestCount = 0;
-  const btn = document.getElementById(`btn-div-${div}`);
-  if (btn) { btn.disabled=true; btn.textContent='⟳ Updating…'; }
-  document.getElementById('progressWrap').classList.add('visible');
-  document.getElementById('progressFill').style.width='0%';
-  try {
-    hideError();
-    const catalog=await fetchClubCatalog([div]);
-    if(!catalog.length) throw new Error(`No ${LEAGUE_NAMES[div]} clubs found`);
-    const playerData=await fetchAllContractedPlayers();
-    const results=buildClubResults(catalog,playerData);
-
-    const snap=loadSnapshot()||{updatedAt:'',results:[],failed:[]};
-    snap.results=(snap.results||[]).filter(r=>r.division!==div);
-    snap.results.push(...results);
-    snap.failed=[];
-    snap.playerCountFetched=playerData.playerCount;
-    snap.unassignedPlayerCount=playerData.unassignedCount;
-    snap.requestCount=requestCount;
-    snap.updatedAt=new Date().toISOString();
-    saveSnapshot(snap);
-    updateLastUpdated(snap.updatedAt);
-    renderAll(snap.results,snap.failed);
-  } catch(e) {
-    showError(`Update failed: ${e.message}`);
-  } finally {
-    document.getElementById('progressWrap').classList.remove('visible');
-    if(btn){btn.disabled=false;btn.textContent='⟳ Update';}
-    isRunning=false;
-  }
-}
-
-// ============================================================
-// MAIN UPDATE
-// ============================================================
-async function startUpdate() {
-  if (isRunning) return;
-  isRunning=true; requestCount=0;
-  const btn = document.getElementById('btnUpdate');
-  btn.disabled=true; btn.textContent='⟳ Fetching…';
-  document.getElementById('progressWrap').classList.add('visible');
-  document.getElementById('progressFill').style.width='0%';
-  document.getElementById('progressStats').textContent='0 / 0';
-  document.getElementById('progressSub').textContent='Loading leaderboards…';
-  document.getElementById('statsBar').style.display='none';
-  hideError();
-
-  try {
-    const catalog=await fetchClubCatalog();
-    if(!catalog.length) throw new Error('No clubs found. API may be unavailable.');
-    document.getElementById('subtitle').textContent=`Cup Seedings & League Strength · ${catalog.length} clubs`;
-
-    const playerData=await fetchAllContractedPlayers();
-    const results=buildClubResults(catalog,playerData);
-    const snap={
-      updatedAt:new Date().toISOString(),
-      results,
-      failed:[],
-      playerCountFetched:playerData.playerCount,
-      unassignedPlayerCount:playerData.unassignedCount,
-      requestCount,
-    };
-    saveSnapshot(snap);
-    updateLastUpdated(snap.updatedAt);
-    renderAll(snap.results,snap.failed);
-  } catch(e) {
-    showError(`Update failed: ${e.message}`);
-  } finally {
-    document.getElementById('progressWrap').classList.remove('visible');
-    btn.disabled=false;
-    btn.textContent='⟳ Update All';
-    isRunning=false;
-  }
-}
+const SCANNER_URL = 'https://cup-rankings-scanner.ricky-hyde-selling.workers.dev';
+function startUpdate() { window.open(SCANNER_URL, '_blank', 'noopener'); }
+function updateDivision() { startUpdate(); }
 
 // ============================================================
 // RENDER ALL
@@ -915,14 +746,22 @@ const hideError = () => document.getElementById('errorBanner').classList.remove(
 function updateLastUpdated(iso){const d=new Date(iso);document.getElementById('lastUpdated').textContent=`Updated: ${d.toLocaleDateString()} ${d.toLocaleTimeString()}`;}
 
 // ============================================================
-// BOOT FROM CACHE
+// BOOT FROM PUBLISHED SNAPSHOT, WITH LAST-KNOWN FALLBACKS
 // ============================================================
-(()=>{
-  const snap=loadSnapshot();
-  if(!snap||!snap.results)return;
-  setCurrentSnapshot(snap);
+(async()=>{
+  let snap=loadSnapshot();
+  for(const url of [`${SCANNER_URL}/league-cup-strengths-data.json`,'./league-cup-strengths-data.json']) {
+    try {
+      const response=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(10000)});
+      if(!response.ok) continue;
+      const candidate=await response.json();
+      if(Array.isArray(candidate.results)&&candidate.results.length){snap=candidate;break;}
+    } catch (_) {}
+  }
+  if(!snap?.results)return;
+  saveSnapshot(snap);
   updateLastUpdated(snap.updatedAt);
-  renderAll(snap.results, snap.failed||[]);
+  renderAll(snap.results,snap.failed||[]);
 })();
 </script>
 </body>

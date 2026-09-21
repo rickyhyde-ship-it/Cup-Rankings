@@ -1,0 +1,3834 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>League & Cup Strengths</title>
+  <link rel="stylesheet" href="../hub-tool-frame.css?v=2.0.5">
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap");
+
+    :root {
+      --accent: #a855f7;
+      --accent-2: #c084fc;
+      --bg-0: #02070d;
+      --bg-1: #06111a;
+      --panel: rgba(9, 20, 31, 0.94);
+      --panel-2: rgba(12, 27, 42, 0.84);
+      --line: rgba(151, 178, 199, 0.24);
+      --line-strong: rgba(168, 85, 247, 0.38);
+      --text: #f4f7f8;
+      --muted: #9da9b7;
+      --soft: #5e7183;
+      --good: #48f59a;
+      --warn: #f59e0b;
+      --bad: #ff6b6b;
+      --retire-none: #48f59a;
+      --retire-yellow: #facc15;
+      --retire-orange: #fb923c;
+      --retire-red: #ff6b6b;
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body.league-cup-strengths-tool {
+      min-height: 100vh;
+      margin: 0;
+      padding: 24px 20px 42px;
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(ellipse 60% 42% at 14% -8%, rgba(168, 85, 247, 0.16), transparent 58%),
+        radial-gradient(ellipse 52% 46% at 90% 104%, rgba(72, 245, 154, 0.08), transparent 62%),
+        linear-gradient(180deg, var(--bg-0), var(--bg-1));
+    }
+
+    .strength-shell {
+      display: grid;
+      gap: 14px;
+      max-width: 1680px;
+      margin: 0 auto;
+    }
+
+    .strength-header,
+    .strength-controls,
+    .stats-bar,
+    .panel,
+    .status-box {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(180deg, rgba(168, 85, 247, 0.08), transparent 40%),
+        var(--panel);
+      box-shadow: inset 0 1px 0 rgba(192, 132, 252, 0.08), 0 18px 42px rgba(0, 0, 0, 0.28);
+    }
+
+    .strength-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 24px;
+      border-color: var(--line-strong);
+    }
+
+    .strength-header h1 {
+      margin: 0;
+      color: var(--text);
+      font-size: clamp(28px, 4vw, 44px);
+      line-height: 1.04;
+      letter-spacing: 0;
+    }
+
+    .section-kicker,
+    .snapshot-chip,
+    .stat-label,
+    .tab-button,
+    .division-button,
+    .metric-button,
+    .team-meta,
+    .tier-count,
+    .table th {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+    }
+
+    .section-kicker {
+      margin: 0 0 9px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .snapshot-stack {
+      display: grid;
+      justify-items: end;
+      gap: 8px;
+      flex: 0 0 auto;
+    }
+
+    .snapshot-chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 38px;
+      padding: 0 12px;
+      border: 1px solid rgba(168, 85, 247, 0.34);
+      border-radius: var(--radius);
+      background: rgba(168, 85, 247, 0.08);
+      color: var(--accent-2);
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .source-line {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .strength-controls {
+      display: grid;
+      grid-template-columns: minmax(240px, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      padding: 14px;
+    }
+
+    .search-input {
+      min-height: 46px;
+    }
+
+    .tab-list,
+    .division-tabs,
+    .league-selectors,
+    .metric-selector {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tab-button,
+    .division-button,
+    .metric-button {
+      min-height: 40px;
+      padding: 0 13px;
+      border: 1px solid rgba(151, 178, 199, 0.24);
+      border-radius: var(--radius);
+      background: rgba(1, 8, 13, 0.46);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .tab-button.active,
+    .division-button.active,
+    .metric-button.active {
+      border-color: rgba(168, 85, 247, 0.52);
+      background: rgba(168, 85, 247, 0.12);
+      color: var(--accent-2);
+    }
+
+    .live-search-panel {
+      display: grid;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .live-search-form {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: end;
+      width: 100%;
+      min-width: 0;
+      max-width: 920px;
+    }
+
+    .live-search-field {
+      position: relative;
+      display: grid;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    #live-results {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .live-search-panel .table-wrap {
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      overflow-x: auto;
+    }
+
+    .field-label {
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .field-hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .live-search-input {
+      width: 100%;
+      min-height: 48px;
+      padding: 0 14px;
+      border: 1px solid rgba(151, 178, 199, 0.34);
+      border-radius: var(--radius);
+      outline: none;
+      background: rgba(1, 8, 13, 0.72);
+      color: var(--text);
+      font: inherit;
+    }
+
+    .live-search-input:focus {
+      border-color: var(--accent-2);
+      box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.18);
+    }
+
+    .live-load-button {
+      min-height: 48px;
+      padding: 0 18px;
+      border: 1px solid rgba(168, 85, 247, 0.72);
+      border-radius: var(--radius);
+      background: var(--accent);
+      color: #fff;
+      font: 800 13px "JetBrains Mono", ui-monospace, monospace;
+      cursor: pointer;
+      transition: background 180ms ease, border-color 180ms ease, opacity 180ms ease;
+    }
+
+    .live-load-button:hover:not(:disabled) {
+      border-color: var(--accent-2);
+      background: #9333ea;
+    }
+
+    .live-load-button:focus-visible,
+    .tab-button:focus-visible,
+    .division-button:focus-visible,
+    .metric-button:focus-visible,
+    .suggestion-button:focus-visible {
+      outline: 3px solid rgba(192, 132, 252, 0.52);
+      outline-offset: 2px;
+    }
+
+    .live-load-button:disabled {
+      cursor: wait;
+      opacity: 0.52;
+    }
+
+    .league-suggestions {
+      position: absolute;
+      z-index: 40;
+      top: calc(100% + 6px);
+      right: 0;
+      left: 0;
+      display: grid;
+      max-height: 320px;
+      overflow-y: auto;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius);
+      background: #09141f;
+      box-shadow: 0 18px 42px rgba(0, 0, 0, 0.48);
+    }
+
+    .league-suggestions[hidden] { display: none; }
+
+    .suggestion-button {
+      display: grid;
+      gap: 4px;
+      min-height: 58px;
+      padding: 10px 12px;
+      border: 0;
+      border-bottom: 1px solid rgba(151, 178, 199, 0.14);
+      background: transparent;
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .suggestion-button:last-child { border-bottom: 0; }
+
+    .suggestion-button:hover,
+    .suggestion-button[aria-selected="true"] {
+      background: rgba(168, 85, 247, 0.12);
+    }
+
+    .suggestion-name {
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .suggestion-meta {
+      color: var(--muted);
+      font: 11px "JetBrains Mono", ui-monospace, monospace;
+    }
+
+    .live-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 48px;
+      padding: 11px 13px;
+      border: 1px solid rgba(151, 178, 199, 0.22);
+      border-radius: var(--radius);
+      background: rgba(1, 8, 13, 0.44);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .live-status[data-state="loading"]::before {
+      width: 15px;
+      height: 15px;
+      flex: 0 0 auto;
+      border: 2px solid rgba(192, 132, 252, 0.25);
+      border-top-color: var(--accent-2);
+      border-radius: 50%;
+      content: "";
+      animation: live-spin 700ms linear infinite;
+    }
+
+    .live-status[data-state="success"] {
+      border-color: rgba(72, 245, 154, 0.3);
+      color: var(--good);
+    }
+
+    .live-status[data-state="error"] {
+      border-color: rgba(255, 107, 107, 0.38);
+      color: var(--bad);
+    }
+
+    @keyframes live-spin { to { transform: rotate(360deg); } }
+
+    .live-results-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding-top: 4px;
+    }
+
+    .live-competition-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .meta-chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 9px;
+      border: 1px solid rgba(151, 178, 199, 0.22);
+      border-radius: 999px;
+      background: rgba(1, 8, 13, 0.42);
+      color: var(--muted);
+      font: 11px "JetBrains Mono", ui-monospace, monospace;
+    }
+
+    .live-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .live-summary-card {
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid rgba(151, 178, 199, 0.18);
+      border-radius: var(--radius);
+      background: rgba(1, 8, 13, 0.42);
+    }
+
+    .live-summary-card b {
+      display: block;
+      overflow: hidden;
+      color: var(--text);
+      font-size: 18px;
+      line-height: 1.2;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .live-summary-card span {
+      display: block;
+      margin-top: 5px;
+      color: var(--soft);
+      font: 10px "JetBrains Mono", ui-monospace, monospace;
+      text-transform: uppercase;
+    }
+
+    .live-rankings-table th[aria-sort] { color: var(--accent-2); }
+
+    .live-metric-cell {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+    }
+
+    .live-metric-cell.active {
+      color: var(--accent-2);
+      font-weight: 800;
+    }
+
+    /* Live League Search — technical data plane inspired by Motion Sites. */
+    .live-search-panel {
+      --live-mint: #72f6c1;
+      --live-blue: #8ac5ff;
+      --live-violet: #b78cff;
+      position: relative;
+      gap: 0;
+      padding: 0;
+      isolation: isolate;
+      border-color: rgba(164, 139, 250, 0.34);
+      background:
+        radial-gradient(circle at 72% 10%, rgba(92, 213, 255, 0.12), transparent 27%),
+        radial-gradient(circle at 16% 0%, rgba(168, 85, 247, 0.18), transparent 34%),
+        linear-gradient(145deg, rgba(7, 16, 27, 0.98), rgba(3, 9, 15, 0.99));
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 32px 90px rgba(0, 0, 0, 0.42);
+    }
+
+    .live-search-panel::before {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(142, 178, 207, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(142, 178, 207, 0.045) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: linear-gradient(to bottom, black, transparent 78%);
+      content: "";
+      pointer-events: none;
+    }
+
+    .live-search-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 0.92fr) minmax(440px, 1.08fr);
+      min-height: 480px;
+    }
+
+    .live-search-copy {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-width: 0;
+      padding: clamp(38px, 5vw, 76px);
+    }
+
+    .live-eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 24px;
+      color: var(--live-mint);
+      font: 700 11px "JetBrains Mono", ui-monospace, monospace;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .live-eyebrow > span:last-child {
+      margin-left: auto;
+      color: var(--soft);
+      font-size: 10px;
+      letter-spacing: 0.03em;
+    }
+
+    .live-signal {
+      width: 8px;
+      height: 8px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: var(--live-mint);
+      box-shadow: 0 0 0 5px rgba(114, 246, 193, 0.1), 0 0 18px rgba(114, 246, 193, 0.72);
+      animation: live-signal-pulse 2s ease-in-out infinite;
+    }
+
+    .live-search-copy h2 {
+      display: grid;
+      gap: 2px;
+      margin: 0;
+      font-family: "Space Grotesk", Inter, sans-serif;
+      font-size: clamp(42px, 5.1vw, 76px);
+      font-weight: 700;
+      line-height: 0.93;
+      letter-spacing: -0.055em;
+    }
+
+    .live-search-copy h2 span { color: var(--text); }
+
+    .live-search-copy h2 em {
+      color: transparent;
+      font-style: normal;
+      background: linear-gradient(90deg, var(--live-mint), var(--live-blue) 52%, var(--live-violet));
+      background-clip: text;
+      -webkit-background-clip: text;
+    }
+
+    .live-search-copy > p {
+      max-width: 580px;
+      margin: 26px 0 0;
+      color: #b7c2ce;
+      font-size: 15px;
+      line-height: 1.72;
+    }
+
+    .live-feature-rail {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0;
+      margin-top: 38px;
+      border-top: 1px solid rgba(151, 178, 199, 0.2);
+      border-bottom: 1px solid rgba(151, 178, 199, 0.12);
+    }
+
+    .live-feature-rail span {
+      display: grid;
+      gap: 6px;
+      min-height: 74px;
+      padding: 15px 14px;
+      border-right: 1px solid rgba(151, 178, 199, 0.13);
+      color: var(--muted);
+      font: 600 10px/1.35 "JetBrains Mono", ui-monospace, monospace;
+      text-transform: uppercase;
+    }
+
+    .live-feature-rail span:first-child { padding-left: 0; }
+    .live-feature-rail span:last-child { border-right: 0; }
+
+    .live-feature-rail b {
+      color: var(--live-mint);
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .live-query-console {
+      position: relative;
+      align-self: center;
+      width: min(640px, calc(100% - clamp(28px, 5vw, 76px)));
+      margin: clamp(28px, 5vw, 76px) clamp(28px, 5vw, 76px) clamp(28px, 5vw, 76px) 0;
+      overflow: visible;
+      border: 1px solid rgba(154, 184, 210, 0.23);
+      border-radius: 18px;
+      background: rgba(2, 9, 15, 0.88);
+      box-shadow:
+        0 32px 80px rgba(0, 0, 0, 0.48),
+        0 0 0 1px rgba(114, 246, 193, 0.025),
+        0 0 70px rgba(79, 172, 254, 0.075);
+    }
+
+    .live-query-console::after {
+      position: absolute;
+      inset: 45px 0 auto;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(114, 246, 193, 0.55), transparent);
+      content: "";
+      transform: translateX(-100%);
+      animation: console-scan 4.8s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .console-chrome {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 46px;
+      padding: 0 18px;
+      border-bottom: 1px solid rgba(151, 178, 199, 0.15);
+      color: #728596;
+      font: 700 10px "JetBrains Mono", ui-monospace, monospace;
+      letter-spacing: 0.08em;
+    }
+
+    .console-online {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--live-mint);
+    }
+
+    .console-online i {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--live-mint);
+      box-shadow: 0 0 12px rgba(114, 246, 193, 0.74);
+    }
+
+    .live-search-panel .live-search-form {
+      grid-template-columns: 1fr;
+      gap: 18px;
+      max-width: none;
+      padding: clamp(24px, 3vw, 38px);
+    }
+
+    .live-search-panel .field-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #dfe7ee;
+      font: 650 12px "JetBrains Mono", ui-monospace, monospace;
+      letter-spacing: -0.01em;
+    }
+
+    .live-search-panel .field-label span {
+      color: var(--live-mint);
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .live-command-line {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      min-height: 58px;
+      overflow: hidden;
+      border: 1px solid rgba(151, 178, 199, 0.28);
+      border-radius: 10px;
+      background: rgba(0, 5, 9, 0.76);
+      transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+    }
+
+    .live-command-line:focus-within {
+      border-color: rgba(114, 246, 193, 0.72);
+      background: rgba(4, 15, 21, 0.9);
+      box-shadow: 0 0 0 3px rgba(114, 246, 193, 0.09), 0 0 35px rgba(74, 222, 170, 0.06);
+    }
+
+    .command-prefix {
+      display: inline-flex;
+      align-items: center;
+      align-self: stretch;
+      padding: 0 13px;
+      border-right: 1px solid rgba(151, 178, 199, 0.16);
+      color: var(--live-mint);
+      background: rgba(114, 246, 193, 0.055);
+      font: 700 11px "JetBrains Mono", ui-monospace, monospace;
+    }
+
+    .live-search-panel .live-search-input {
+      min-width: 0;
+      min-height: 56px;
+      padding: 0 14px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      font: 600 15px "JetBrains Mono", ui-monospace, monospace;
+      box-shadow: none;
+    }
+
+    .live-search-panel .live-search-input:focus { box-shadow: none; }
+
+    .live-search-panel .field-hint {
+      color: #718294;
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 10px;
+    }
+
+    .live-search-panel .live-load-button {
+      position: relative;
+      width: 100%;
+      min-height: 54px;
+      overflow: hidden;
+      border-color: rgba(114, 246, 193, 0.54);
+      border-radius: 10px;
+      background: linear-gradient(110deg, #7c3aed 0%, #9d58f7 48%, #377db4 100%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.17), 0 12px 28px rgba(99, 45, 179, 0.24);
+      color: #fff;
+      letter-spacing: 0.02em;
+    }
+
+    .live-search-panel .live-load-button::after {
+      margin-left: 10px;
+      color: var(--live-mint);
+      content: "↗";
+      font-size: 15px;
+    }
+
+    .live-search-panel .live-load-button:hover:not(:disabled) {
+      border-color: var(--live-mint);
+      background: linear-gradient(110deg, #8b45f0, #a865fa 48%, #3d8cc8);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 16px 34px rgba(99, 45, 179, 0.32), 0 0 24px rgba(114, 246, 193, 0.08);
+      transform: translateY(-1px);
+    }
+
+    .live-search-panel .league-suggestions {
+      top: calc(100% - 45px);
+      border-color: rgba(114, 246, 193, 0.3);
+      border-radius: 10px;
+      background: rgba(3, 12, 19, 0.99);
+      box-shadow: 0 24px 54px rgba(0, 0, 0, 0.58), 0 0 32px rgba(114, 246, 193, 0.05);
+    }
+
+    .live-search-panel .suggestion-button:hover,
+    .live-search-panel .suggestion-button[aria-selected="true"] {
+      background: linear-gradient(90deg, rgba(114, 246, 193, 0.1), rgba(183, 140, 255, 0.08));
+    }
+
+    .live-query-console .live-status {
+      min-height: 48px;
+      margin: 0;
+      padding: 11px 18px;
+      border: 0;
+      border-top: 1px solid rgba(151, 178, 199, 0.14);
+      border-radius: 0 0 18px 18px;
+      background: rgba(1, 7, 12, 0.7);
+      color: #788b9d;
+      font: 600 10px/1.45 "JetBrains Mono", ui-monospace, monospace;
+      letter-spacing: 0.015em;
+    }
+
+    .live-query-console .live-status[data-state="success"] { color: var(--live-mint); }
+
+    .live-results-stage {
+      position: relative;
+      display: grid;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .live-results-stage:not(:empty) {
+      padding: 0 clamp(20px, 3vw, 44px) clamp(24px, 4vw, 52px);
+      animation: live-stage-in 380ms cubic-bezier(.2,.8,.2,1) both;
+    }
+
+    .live-results-stage .live-results-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      gap: 30px;
+      padding: 30px 30px 24px;
+      border: 1px solid rgba(151, 178, 199, 0.2);
+      border-radius: 14px 14px 0 0;
+      background:
+        linear-gradient(90deg, rgba(114, 246, 193, 0.055), transparent 34%),
+        rgba(4, 12, 20, 0.92);
+    }
+
+    .live-results-stage .league-title {
+      margin: 0;
+      font-family: "Space Grotesk", Inter, sans-serif;
+      font-size: clamp(30px, 4vw, 50px);
+      letter-spacing: -0.04em;
+    }
+
+    .live-results-stage .live-competition-meta { margin-top: 13px; }
+
+    .live-results-stage .meta-chip {
+      min-height: 26px;
+      border-radius: 4px;
+      border-color: rgba(151, 178, 199, 0.17);
+      background: rgba(0, 5, 9, 0.44);
+      color: #8496a7;
+      font-size: 9px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .live-results-stage .league-selectors {
+      display: grid;
+      justify-items: end;
+      gap: 9px;
+    }
+
+    .live-results-stage .metric-selector {
+      gap: 0;
+      border-bottom: 1px solid rgba(151, 178, 199, 0.16);
+    }
+
+    .live-results-stage .metric-button {
+      min-height: 40px;
+      padding: 0 13px;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      border-radius: 0;
+      background: transparent;
+      color: #748697;
+      font-size: 10px;
+      transition: color 180ms ease, border-color 180ms ease, background 180ms ease;
+    }
+
+    .live-results-stage .metric-button:hover {
+      color: #d9e4ec;
+      background: linear-gradient(to top, rgba(114, 246, 193, 0.045), transparent);
+    }
+
+    .live-results-stage .metric-button.active {
+      border-color: var(--live-mint);
+      background: linear-gradient(to top, rgba(114, 246, 193, 0.08), transparent);
+      color: var(--live-mint);
+      box-shadow: none;
+    }
+
+    .live-results-stage .live-summary-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1px;
+      border: 1px solid rgba(151, 178, 199, 0.2);
+      border-top: 0;
+      background: rgba(151, 178, 199, 0.16);
+    }
+
+    .live-results-stage .live-summary-card {
+      min-height: 112px;
+      padding: 22px;
+      border: 0;
+      border-radius: 0;
+      background: rgba(3, 11, 18, 0.96);
+    }
+
+    .live-results-stage .live-summary-card b {
+      color: #f5f8fa;
+      font-family: "Space Grotesk", Inter, sans-serif;
+      font-size: clamp(22px, 2vw, 31px);
+      letter-spacing: -0.035em;
+    }
+
+    .live-results-stage .live-summary-card span {
+      margin-top: 11px;
+      color: #65788a;
+      font-size: 9px;
+      letter-spacing: 0.055em;
+    }
+
+    .live-results-stage .live-summary-card:nth-child(3) b { color: var(--live-mint); }
+    .live-results-stage .live-summary-card.retirement-none b { color: var(--retire-none); }
+    .live-results-stage .live-summary-card.retirement-yellow b { color: var(--retire-yellow); }
+    .live-results-stage .live-summary-card.retirement-orange b { color: var(--retire-orange); }
+    .live-results-stage .live-summary-card.retirement-red b { color: var(--retire-red); }
+
+    .live-results-stage .table-heading {
+      margin: 14px 0 0;
+      padding: 0 2px;
+    }
+
+    .live-results-stage .table-title {
+      color: #e9f0f5;
+      font-size: 16px;
+    }
+
+    .live-results-stage .table-wrap {
+      border: 1px solid rgba(151, 178, 199, 0.2);
+      border-radius: 14px;
+      background:
+        linear-gradient(rgba(142, 178, 207, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(142, 178, 207, 0.025) 1px, transparent 1px),
+        rgba(2, 9, 15, 0.93);
+      background-size: 40px 40px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+    }
+
+    .live-results-stage .table {
+      min-width: 1240px;
+      border-collapse: collapse;
+    }
+
+    .live-results-stage .table th {
+      height: 48px;
+      padding: 0 16px;
+      border-bottom-color: rgba(151, 178, 199, 0.18);
+      background: rgba(5, 14, 22, 0.92);
+      color: #647789;
+      font-size: 9px;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .live-results-stage .table th[aria-sort] { color: var(--live-mint); }
+
+    .live-results-stage .table td {
+      height: 68px;
+      padding: 10px 16px;
+      border-bottom-color: rgba(151, 178, 199, 0.09);
+      color: #aebbc6;
+      font-size: 12px;
+    }
+
+    .live-results-stage .table tbody tr {
+      transition: background 180ms ease, box-shadow 180ms ease;
+    }
+
+    .live-results-stage .table tbody tr:hover {
+      background: linear-gradient(90deg, rgba(114, 246, 193, 0.075), rgba(183, 140, 255, 0.035));
+      box-shadow: inset 2px 0 var(--live-mint);
+    }
+
+    .live-results-stage .table tbody tr[data-leader="true"] {
+      background: linear-gradient(90deg, rgba(114, 246, 193, 0.09), rgba(183, 140, 255, 0.045), transparent);
+    }
+
+    .live-rank-number {
+      color: #6f8495;
+      font: 700 11px "JetBrains Mono", ui-monospace, monospace;
+    }
+
+    tr[data-leader="true"] .live-rank-number { color: var(--live-mint); }
+
+    .live-club-ident {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-width: 190px;
+    }
+
+    .live-club-mark {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      flex: 0 0 auto;
+      place-items: center;
+      border: 1px solid var(--club-secondary, rgba(255,255,255,.25));
+      border-radius: 8px;
+      background: var(--club-main, #17212c);
+      color: #fff;
+      font: 800 9px "JetBrains Mono", ui-monospace, monospace;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+    }
+
+    .live-results-stage .team-name { color: #ecf2f6; }
+    .live-results-stage .team-name:hover { color: var(--live-mint); }
+
+    .live-metric-stack {
+      display: grid;
+      gap: 7px;
+      min-width: 92px;
+    }
+
+    .live-metric-stack b {
+      color: #b7c5cf;
+      font: 700 12px "JetBrains Mono", ui-monospace, monospace;
+    }
+
+    .live-metric-cell.active .live-metric-stack b { color: var(--live-mint); }
+
+    .live-metric-track {
+      display: block;
+      width: 100%;
+      height: 3px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(151, 178, 199, 0.13);
+    }
+
+    .live-metric-track i {
+      display: block;
+      width: var(--metric-fill, 0%);
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--live-violet), var(--live-blue));
+      transform-origin: left;
+      animation: live-meter-in 520ms cubic-bezier(.2,.8,.2,1) both;
+    }
+
+    .live-metric-cell.active .live-metric-track i {
+      background: linear-gradient(90deg, var(--live-mint), var(--live-blue));
+      box-shadow: 0 0 9px rgba(114, 246, 193, 0.36);
+    }
+
+    @keyframes live-signal-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .6; transform: scale(.78); }
+    }
+
+    @keyframes console-scan {
+      0%, 24% { opacity: 0; transform: translateX(-100%); }
+      45% { opacity: .8; }
+      70%, 100% { opacity: 0; transform: translateX(100%); }
+    }
+
+    @keyframes live-stage-in {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes live-meter-in {
+      from { opacity: .3; transform: scaleX(.08); }
+      to { opacity: 1; transform: scaleX(1); }
+    }
+
+    @media (max-width: 1100px) {
+      .live-search-hero { grid-template-columns: 1fr; }
+      .live-search-copy { padding-bottom: 30px; }
+      .live-query-console {
+        width: auto;
+        margin: 0 clamp(28px, 5vw, 76px) clamp(34px, 6vw, 68px);
+      }
+      .live-results-stage .live-results-head { grid-template-columns: 1fr; }
+      .live-results-stage .league-selectors { justify-items: start; }
+    }
+
+    @media (max-width: 680px) {
+      .live-search-copy { padding: 34px 20px 28px; }
+      .live-eyebrow { align-items: flex-start; flex-wrap: wrap; }
+      .live-eyebrow > span:last-child { width: 100%; margin: 2px 0 0 17px; }
+      .live-search-copy h2 { font-size: clamp(40px, 13vw, 58px); }
+      .live-search-copy > p { font-size: 14px; line-height: 1.65; }
+      .live-feature-rail { grid-template-columns: 1fr; }
+      .live-feature-rail span,
+      .live-feature-rail span:first-child {
+        grid-template-columns: 30px 1fr;
+        min-height: 44px;
+        padding: 12px 0;
+        border-right: 0;
+        border-bottom: 1px solid rgba(151,178,199,.1);
+      }
+      .live-feature-rail span:last-child { border-bottom: 0; }
+      .live-query-console { margin: 0 12px 32px; }
+      .live-search-panel .live-search-form { padding: 20px 16px; }
+      .command-prefix { display: none; }
+      .live-results-stage:not(:empty) { padding: 0 12px 28px; }
+      .live-results-stage .live-results-head { padding: 24px 18px 20px; }
+      .live-results-stage .league-title { font-size: 34px; }
+      .live-results-stage .league-selectors,
+      .live-results-stage .metric-selector { width: 100%; }
+      .live-results-stage .metric-selector {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .live-results-stage .league-selectors .metric-selector:first-child {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .live-results-stage .metric-button { width: 100%; padding-inline: 6px; }
+      .live-results-stage .live-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .live-results-stage .live-summary-card { min-height: 100px; padding: 17px; }
+      .live-results-stage .table { min-width: 790px; }
+    }
+
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0;
+    }
+
+    .stat {
+      min-width: 0;
+      padding: 15px 16px;
+      border-right: 1px solid rgba(151, 178, 199, 0.14);
+    }
+
+    .stat:last-child { border-right: 0; }
+
+    .stat-value {
+      display: block;
+      color: var(--text);
+      font-size: 24px;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .stat-label {
+      display: block;
+      margin-top: 6px;
+      color: var(--soft);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .panel {
+      padding: 18px;
+    }
+
+    .panel[hidden] { display: none; }
+
+    .stats-bar[hidden],
+    .search-input[hidden] { display: none; }
+
+    .cup-tools,
+    .league-tools {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.2;
+    }
+
+    .panel-subtitle {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .tier-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .tier-section {
+      border: 1px solid rgba(151, 178, 199, 0.18);
+      border-radius: var(--radius);
+      background: rgba(1, 8, 13, 0.34);
+    }
+
+    .tier-section[open] {
+      border-color: var(--tier-color, var(--line-strong));
+      background: rgba(1, 8, 13, 0.5);
+    }
+
+    .tier-summary {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      min-height: 54px;
+      padding: 0 14px;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .tier-summary::-webkit-details-marker { display: none; }
+
+    .tier-name {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .tier-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      background: var(--tier-color, var(--accent));
+      box-shadow: 0 0 14px color-mix(in srgb, var(--tier-color, var(--accent)) 52%, transparent);
+      flex: 0 0 auto;
+    }
+
+    .tier-count {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(262px, 1fr));
+      gap: 9px;
+      padding: 0 14px 14px;
+    }
+
+    .team-card {
+      position: relative;
+      display: grid;
+      grid-template-columns: 44px 36px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      min-height: 74px;
+      padding: 11px 12px;
+      overflow: hidden;
+      border: 1px solid rgba(151, 178, 199, 0.18);
+      border-radius: var(--radius);
+      background: rgba(2, 9, 15, 0.58);
+    }
+
+    .team-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 3px;
+      background: var(--tier-color, var(--accent));
+    }
+
+    .team-rank,
+    .team-ovr {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-weight: 800;
+    }
+
+    .team-rank {
+      color: var(--soft);
+      font-size: 12px;
+    }
+
+    .team-swatch {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius);
+      color: white;
+      font-size: 10px;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .team-name {
+      display: block;
+      overflow: hidden;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 800;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .team-name:hover { color: var(--accent-2); }
+
+    .team-meta {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .team-ovr {
+      color: var(--tier-color, var(--accent-2));
+      font-size: 18px;
+      text-align: right;
+    }
+
+    .team-ovr small {
+      display: block;
+      margin-top: 2px;
+      color: var(--soft);
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .tag {
+      display: inline-flex;
+      margin-top: 5px;
+      padding: 2px 6px;
+      border: 1px solid rgba(245, 158, 11, 0.34);
+      border-radius: 5px;
+      background: rgba(245, 158, 11, 0.1);
+      color: var(--warn);
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .search-results {
+      display: grid;
+      gap: 9px;
+    }
+
+    .league-layout {
+      display: grid;
+      gap: 14px;
+    }
+
+    .league-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding-bottom: 14px;
+      border-bottom: 1px solid rgba(151, 178, 199, 0.16);
+    }
+
+    .league-title {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .league-selectors {
+      justify-content: flex-end;
+    }
+
+    .metric-selector[aria-label="OVR calculation"] {
+      padding-right: 8px;
+      border-right: 1px solid rgba(151, 178, 199, 0.16);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 9px;
+    }
+
+    .league-stat {
+      padding: 13px;
+      border: 1px solid rgba(151, 178, 199, 0.16);
+      border-radius: var(--radius);
+      background: rgba(2, 9, 15, 0.48);
+      text-align: center;
+    }
+
+    .league-stat b {
+      display: block;
+      color: var(--accent-2);
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .league-stat span {
+      display: block;
+      margin-top: 6px;
+      color: var(--soft);
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .league-chart-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .league-chart-card {
+      min-width: 0;
+      padding: 16px;
+      border: 1px solid rgba(151, 178, 199, 0.16);
+      border-radius: var(--radius);
+      background: rgba(2, 9, 15, 0.48);
+    }
+
+    .chart-title,
+    .table-title {
+      margin: 0;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .chart-title {
+      margin-bottom: 14px;
+    }
+
+    .column-chart {
+      display: grid;
+      grid-template-columns: repeat(var(--bar-count, 8), minmax(16px, 1fr));
+      align-items: end;
+      gap: 8px;
+      min-height: 196px;
+      padding-top: 6px;
+    }
+
+    .column-bar {
+      display: grid;
+      grid-template-rows: 160px 24px;
+      gap: 8px;
+      min-width: 0;
+      color: var(--soft);
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 10px;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .column-bar i {
+      align-self: end;
+      display: block;
+      min-height: 2px;
+      border-radius: 4px 4px 1px 1px;
+      background: linear-gradient(180deg, var(--bar-color, var(--accent-2)), color-mix(in srgb, var(--bar-color, var(--accent)) 72%, #02070d));
+      box-shadow: 0 0 14px color-mix(in srgb, var(--bar-color, var(--accent)) 26%, transparent);
+    }
+
+    .column-bar span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .horizontal-chart {
+      display: grid;
+      gap: 7px;
+    }
+
+    .horizontal-row {
+      display: grid;
+      grid-template-columns: minmax(96px, 180px) minmax(90px, 1fr) 46px;
+      gap: 9px;
+      align-items: center;
+      min-height: 20px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .horizontal-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .horizontal-track {
+      height: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(151, 178, 199, 0.14);
+    }
+
+    .horizontal-fill {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent-2), var(--good));
+    }
+
+    .horizontal-value {
+      color: var(--text);
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 10px;
+      font-weight: 800;
+      text-align: right;
+    }
+
+    .bands-chart {
+      display: grid;
+      grid-template-columns: minmax(180px, 240px) minmax(140px, 1fr);
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      min-height: 196px;
+    }
+
+    .donut {
+      width: min(220px, 100%);
+      aspect-ratio: 1;
+      justify-self: center;
+      border-radius: 50%;
+      background: conic-gradient(var(--accent) 0deg 360deg);
+      box-shadow: inset 0 0 0 1px rgba(244, 247, 248, 0.1), 0 18px 34px rgba(0, 0, 0, 0.24);
+      position: relative;
+    }
+
+    .donut::after {
+      content: "";
+      position: absolute;
+      inset: 30%;
+      border-radius: 50%;
+      background: var(--bg-0);
+      box-shadow: inset 0 0 0 1px rgba(151, 178, 199, 0.12);
+    }
+
+    .chart-legend {
+      display: grid;
+      gap: 9px;
+    }
+
+    .legend-item {
+      display: grid;
+      grid-template-columns: 12px minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .legend-swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+      background: var(--swatch-color, var(--accent));
+    }
+
+    .legend-count {
+      color: var(--text);
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .table-heading {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .table-wrap {
+      max-width: 100%;
+      overflow-x: auto;
+      border: 1px solid rgba(151, 178, 199, 0.16);
+      border-radius: var(--radius);
+    }
+
+    .table {
+      width: 100%;
+      min-width: 760px;
+      border-collapse: collapse;
+      background: rgba(2, 9, 15, 0.34);
+    }
+
+    .table th,
+    .table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(151, 178, 199, 0.12);
+      text-align: left;
+      font-size: 13px;
+    }
+
+    .table th {
+      color: var(--soft);
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    .table td:last-child,
+    .table th:last-child {
+      text-align: right;
+    }
+
+    .strength-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 140px;
+    }
+
+    .strength-track {
+      position: relative;
+      flex: 1;
+      height: 6px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(151, 178, 199, 0.14);
+    }
+
+    .strength-fill {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    }
+
+    .empty,
+    .status-box {
+      padding: 22px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .status-box.error {
+      border-color: rgba(255, 107, 107, 0.34);
+      color: var(--bad);
+    }
+
+    @media (max-width: 900px) {
+      body.league-cup-strengths-tool {
+        padding: 16px 12px 30px;
+      }
+
+      .strength-header,
+      .strength-controls,
+      .league-head {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .strength-header {
+        display: grid;
+      }
+
+      .snapshot-stack {
+        justify-items: start;
+      }
+
+      .source-line {
+        text-align: left;
+      }
+
+      .strength-controls {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-bar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .league-chart-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .league-selectors {
+        justify-content: flex-start;
+      }
+
+      .metric-selector[aria-label="OVR calculation"] {
+        padding-right: 0;
+        padding-bottom: 8px;
+        border-right: 0;
+        border-bottom: 1px solid rgba(151, 178, 199, 0.16);
+      }
+
+      .column-chart {
+        gap: 5px;
+      }
+
+      .column-bar {
+        font-size: 9px;
+      }
+
+      .bands-chart {
+        grid-template-columns: 1fr;
+        gap: 18px;
+      }
+
+      .horizontal-row {
+        grid-template-columns: minmax(84px, 1fr) minmax(80px, 1.4fr) 40px;
+      }
+
+      .stat {
+        border-bottom: 1px solid rgba(151, 178, 199, 0.14);
+      }
+
+      .team-card {
+        grid-template-columns: 38px 34px minmax(0, 1fr);
+      }
+
+      .team-ovr {
+        grid-column: 3;
+        text-align: left;
+      }
+    }
+  </style>
+<style>
+/* ============================================================
+       ORBITAL TOUCHLINE / STRENGTH RADAR
+    ============================================================ */
+    :root {
+      --accent: #a855f7;
+      --accent-2: #c084fc;
+      --bg-0: #02070d;
+      --bg-1: #06111a;
+      --panel: rgba(6, 17, 26, .93);
+      --panel-2: rgba(9, 20, 31, .94);
+      --line: rgba(151, 178, 199, .19);
+      --line-strong: rgba(168, 85, 247, .4);
+      --text: #f4f7f8;
+      --muted: #aeb9c5;
+      --soft: #718092;
+      --good: #48f59a;
+      --warn: #f4b84a;
+      --bad: #ff6b6b;
+      --radius: 7px;
+    }
+
+    html {
+      min-width: 0;
+      background: var(--bg-0);
+      color-scheme: dark;
+    }
+
+    body.league-cup-strengths-tool {
+      position: relative;
+      min-width: 0;
+      padding: clamp(18px, 2.6vw, 36px) clamp(12px, 2.7vw, 38px) 48px;
+      overflow-x: clip;
+      background:
+        radial-gradient(circle at 9% 2%, rgba(168, 85, 247, .21), transparent 31rem),
+        radial-gradient(circle at 92% 74%, rgba(72, 245, 154, .075), transparent 27rem),
+        linear-gradient(155deg, #02070d 0%, #06111a 55%, #030a12 100%);
+    }
+
+    body.league-cup-strengths-tool::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(168,85,247,.043) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(168,85,247,.043) 1px, transparent 1px),
+        repeating-linear-gradient(0deg, transparent 0 4px, rgba(255,255,255,.011) 4px 5px);
+      background-size: 76px 76px, 76px 76px, 100% 5px;
+      mask-image: linear-gradient(to bottom, black, transparent 88%);
+    }
+
+    body.league-cup-strengths-tool::after {
+      content: "";
+      position: fixed;
+      z-index: 0;
+      top: -330px;
+      right: -260px;
+      width: 720px;
+      aspect-ratio: 1;
+      pointer-events: none;
+      border: 1px solid rgba(192,132,252,.18);
+      border-radius: 50%;
+      box-shadow:
+        0 0 0 58px rgba(168,85,247,.035),
+        0 0 0 144px rgba(72,245,154,.018);
+    }
+
+    .strength-shell {
+      position: relative;
+      z-index: 1;
+      gap: 10px;
+      max-width: 1720px;
+      animation: strength-deck-in 680ms cubic-bezier(.2,.8,.2,1) both;
+    }
+
+    .strength-shell::before {
+      content: "AH / COMPETITIVE STRENGTH RADAR";
+      display: block;
+      margin: 0 0 -1px 3px;
+      color: var(--good);
+      font: 700 10px/1 "JetBrains Mono", monospace;
+      letter-spacing: .18em;
+    }
+
+    .strength-header,
+    .strength-controls,
+    .stats-bar,
+    .panel,
+    .status-box {
+      position: relative;
+      border-color: var(--line);
+      border-radius: 9px 9px 9px 2px;
+      background:
+        linear-gradient(145deg, rgba(168,85,247,.075), transparent 38%),
+        linear-gradient(180deg, rgba(255,255,255,.02), transparent),
+        var(--panel);
+      box-shadow: inset 0 1px rgba(255,255,255,.05), 0 20px 58px rgba(0,0,0,.32);
+    }
+
+    .strength-header {
+      min-height: 210px;
+      padding: clamp(28px, 4.4vw, 58px);
+      border-color: rgba(168,85,247,.4);
+      border-radius: 12px 12px 12px 3px;
+      clip-path: polygon(0 0, calc(100% - 30px) 0, 100% 30px, 100% 100%, 0 100%);
+    }
+
+    .strength-header::before,
+    .panel::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto auto 0;
+      width: 210px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--good), transparent);
+      box-shadow: 0 0 20px rgba(168,85,247,.52);
+    }
+
+    .strength-header h1 {
+      max-width: 980px;
+      font-family: "Space Grotesk", Inter, sans-serif;
+      font-size: clamp(42px, 6.5vw, 84px);
+      font-weight: 700;
+      line-height: .9;
+      letter-spacing: -.06em;
+      color: transparent;
+      background: linear-gradient(110deg, #fff 10%, #e9d5ff 58%, #aeb9c5);
+      -webkit-background-clip: text;
+      background-clip: text;
+    }
+
+    .section-kicker {
+      margin-bottom: 16px;
+      color: var(--good);
+      font-size: 9px;
+      letter-spacing: .15em;
+    }
+
+    .snapshot-stack {
+      padding: 11px;
+      border: 1px solid rgba(151,178,199,.16);
+      border-radius: 7px 7px 7px 2px;
+      background: rgba(1,8,13,.3);
+    }
+
+    .snapshot-chip {
+      min-height: 44px;
+      border-color: rgba(192,132,252,.42);
+      border-radius: 5px 5px 5px 1px;
+      color: #e0c4ff;
+    }
+
+    .source-line {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10px;
+    }
+
+    .strength-controls {
+      grid-template-columns: minmax(240px, 1fr) auto;
+      padding: 10px;
+    }
+
+    .search-input,
+    .tab-button,
+    .division-button,
+    .metric-button {
+      min-height: 46px;
+      border-radius: 6px 6px 6px 2px;
+      transition: transform 170ms ease, border-color 170ms ease, color 170ms ease, background 170ms ease, box-shadow 170ms ease;
+    }
+
+    .search-input {
+      width: 100%;
+      min-width: 0;
+      padding-inline: 15px;
+      border: 1px solid rgba(151,178,199,.28);
+      background: rgba(1,8,13,.72);
+      color: var(--text);
+      font: 500 12px/1 "JetBrains Mono", monospace;
+      outline: none;
+    }
+
+    .search-input::placeholder { color: #718092; }
+
+    .search-input:focus,
+    .tab-button:focus-visible,
+    .division-button:focus-visible,
+    .metric-button:focus-visible,
+    .team-swatch:focus-visible,
+    .team-name:focus-visible,
+    .tier-summary:focus-visible {
+      outline: 2px solid var(--good);
+      outline-offset: 3px;
+      border-color: var(--good);
+      box-shadow: 0 0 0 4px rgba(72,245,154,.1);
+    }
+
+    .tab-button,
+    .division-button,
+    .metric-button {
+      padding-inline: 14px;
+      border-color: rgba(151,178,199,.24);
+      background: rgba(1,8,13,.56);
+      color: #95a3b2;
+      font-size: 10px;
+      letter-spacing: .025em;
+    }
+
+    .tab-button:hover,
+    .division-button:hover,
+    .metric-button:hover {
+      transform: translateY(-1px);
+      border-color: var(--good);
+      color: var(--good);
+      background: rgba(72,245,154,.06);
+    }
+
+    .tab-button.active,
+    .division-button.active,
+    .metric-button.active {
+      border-color: rgba(192,132,252,.55);
+      background: linear-gradient(120deg, rgba(168,85,247,.19), rgba(72,245,154,.035));
+      color: #e4caff;
+      box-shadow: inset 2px 0 var(--accent);
+    }
+
+    .stats-bar {
+      grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+      border-color: rgba(168,85,247,.26);
+    }
+
+    .stat {
+      position: relative;
+      min-height: 96px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 17px 18px;
+      border-right-color: rgba(151,178,199,.13);
+      background: rgba(1,8,13,.18);
+      transition: background 170ms ease;
+    }
+
+    .stat::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent 72%);
+    }
+
+    .stat:nth-child(2n)::before {
+      background: linear-gradient(90deg, var(--good), transparent 72%);
+    }
+
+    .stat:hover {
+      background: rgba(168,85,247,.07);
+    }
+
+    .stat-value {
+      font-family: "Space Grotesk", Inter, sans-serif;
+      font-size: clamp(25px, 2.4vw, 34px);
+      letter-spacing: -.035em;
+    }
+
+    .stat-label {
+      color: #718092;
+      font-size: 9px;
+      letter-spacing: .09em;
+    }
+
+    .panel {
+      padding: clamp(14px, 2vw, 24px);
+    }
+
+    .panel-title,
+    .league-title {
+      font-family: "Space Grotesk", Inter, sans-serif;
+      letter-spacing: -.035em;
+    }
+
+    .panel-title { font-size: clamp(22px, 2.5vw, 32px); }
+    .league-title { font-size: clamp(28px, 3.4vw, 42px); }
+
+    .panel-subtitle {
+      color: #95a3b2;
+      line-height: 1.5;
+    }
+
+    .tier-section {
+      overflow: hidden;
+      border-color: rgba(151,178,199,.16);
+      border-radius: 7px 7px 7px 2px;
+      background: rgba(1,8,13,.36);
+      transition: border-color 170ms ease, background 170ms ease;
+    }
+
+    .tier-section[open] {
+      background:
+        linear-gradient(90deg, color-mix(in srgb, var(--tier-color) 8%, transparent), transparent 40%),
+        rgba(1,8,13,.5);
+      box-shadow: inset 2px 0 var(--tier-color);
+    }
+
+    .tier-summary {
+      min-height: 58px;
+      padding-inline: 15px;
+      transition: background 160ms ease;
+    }
+
+    .tier-summary:hover {
+      background: rgba(168,85,247,.06);
+    }
+
+    .tier-name {
+      font-family: "Space Grotesk", Inter, sans-serif;
+      font-size: 16px;
+      letter-spacing: -.02em;
+    }
+
+    .team-grid {
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 8px;
+    }
+
+    .team-card {
+      min-height: 78px;
+      border-color: rgba(151,178,199,.16);
+      border-radius: 6px 6px 6px 2px;
+      background:
+        linear-gradient(135deg, rgba(168,85,247,.045), transparent 48%),
+        rgba(2,9,15,.64);
+      transition: transform 170ms ease, border-color 170ms ease, background 170ms ease;
+    }
+
+    .team-card:hover {
+      transform: translateY(-2px);
+      border-color: color-mix(in srgb, var(--tier-color, var(--accent)) 45%, transparent);
+      background:
+        linear-gradient(135deg, rgba(168,85,247,.1), transparent 54%),
+        rgba(5,14,23,.92);
+    }
+
+    .team-card::after {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 1px;
+      background: linear-gradient(90deg, var(--tier-color, var(--accent)), transparent 68%);
+      opacity: .66;
+    }
+
+    .team-swatch {
+      width: 38px;
+      height: 38px;
+      border-radius: 5px 5px 5px 1px;
+      box-shadow: 0 8px 18px rgba(0,0,0,.28);
+    }
+
+    .team-name {
+      font-family: "Space Grotesk", Inter, sans-serif;
+      letter-spacing: -.015em;
+    }
+
+    .team-name:hover { color: var(--good); }
+
+    .retirement-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 7px;
+    }
+
+    .retirement-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      min-height: 22px;
+      padding: 3px 6px;
+      border: 1px solid color-mix(in srgb, currentColor 48%, transparent);
+      border-radius: 4px;
+      background: color-mix(in srgb, currentColor 8%, transparent);
+      color: var(--muted);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: .035em;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .retirement-chip strong { color: currentColor; font-size: 10px; }
+    .retirement-none { color: var(--retire-none); }
+    .retirement-yellow { color: var(--retire-yellow); }
+    .retirement-orange { color: var(--retire-orange); }
+    .retirement-red { color: var(--retire-red); }
+
+    .retirement-pending {
+      color: var(--soft);
+      font-family: "JetBrains Mono", monospace;
+      font-size: 9px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+
+    .stat.retirement-none::before,
+    .league-stat.retirement-none::before { background: var(--retire-none); }
+    .stat.retirement-yellow::before,
+    .league-stat.retirement-yellow::before { background: var(--retire-yellow); }
+    .stat.retirement-orange::before,
+    .league-stat.retirement-orange::before { background: var(--retire-orange); }
+    .stat.retirement-red::before,
+    .league-stat.retirement-red::before { background: var(--retire-red); }
+
+    .retirement-cell {
+      color: currentColor;
+      font-family: "JetBrains Mono", monospace;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .team-ovr,
+    .league-stat b {
+      text-shadow: 0 0 18px color-mix(in srgb, currentColor 22%, transparent);
+    }
+
+    .stats-grid {
+      grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+      gap: 8px;
+    }
+
+    .retirement-heading {
+      grid-column: 1 / -1;
+      margin: 6px 0 0;
+      color: #8291a1;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .league-stat,
+    .league-chart-card {
+      position: relative;
+      overflow: hidden;
+      border-color: rgba(151,178,199,.15);
+      border-radius: 7px 7px 7px 2px;
+      background:
+        linear-gradient(145deg, rgba(168,85,247,.055), transparent 48%),
+        rgba(2,9,15,.54);
+    }
+
+    .league-stat::before,
+    .league-chart-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 1px;
+      background: linear-gradient(90deg, var(--accent), var(--good), transparent 70%);
+    }
+
+    .league-chart-grid {
+      gap: 10px;
+    }
+
+    .chart-title,
+    .table-title {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+      letter-spacing: .08em;
+    }
+
+    .column-bar i,
+    .horizontal-fill,
+    .strength-fill {
+      box-shadow: 0 0 18px rgba(168,85,247,.18);
+      animation: strength-bars-in 520ms ease both;
+      transform-origin: bottom;
+    }
+
+    .horizontal-fill,
+    .strength-fill {
+      transform-origin: left;
+    }
+
+    .donut {
+      filter: drop-shadow(0 0 18px rgba(168,85,247,.16));
+    }
+
+    .table-wrap {
+      border-color: rgba(151,178,199,.16);
+      border-radius: 7px 7px 7px 2px;
+      scrollbar-color: rgba(168,85,247,.52) rgba(1,8,13,.5);
+      scrollbar-gutter: stable;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-inline: contain;
+    }
+
+    .table {
+      background: rgba(1,8,13,.36);
+    }
+
+    #league-content .table { min-width: 1120px; }
+
+    .table th {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      height: 44px;
+      background: rgba(7,17,28,.985);
+      color: #8291a1;
+      letter-spacing: .07em;
+    }
+
+    .table td {
+      height: 54px;
+      border-bottom-color: rgba(151,178,199,.1);
+    }
+
+    .table tbody tr {
+      transition: background 150ms ease, box-shadow 150ms ease;
+    }
+
+    .table tbody tr:hover {
+      background: linear-gradient(90deg, rgba(168,85,247,.09), rgba(72,245,154,.02));
+      box-shadow: inset 2px 0 var(--accent);
+    }
+
+    .status-box {
+      min-height: 54px;
+      padding: 16px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 11px;
+    }
+
+    @keyframes strength-deck-in {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes strength-bars-in {
+      from { transform: scaleY(.08); opacity: .35; }
+      to { transform: scaleY(1); opacity: 1; }
+    }
+
+    @media (max-width: 768px) {
+      body.league-cup-strengths-tool {
+        padding: 14px 10px 30px;
+      }
+
+      .strength-header {
+        min-height: 0;
+        padding: 28px 20px;
+        clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%);
+      }
+
+      .strength-controls {
+        grid-template-columns: 1fr;
+      }
+
+      .tab-list {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .tab-button { width: 100%; }
+
+      .live-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .stats-bar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .stat {
+        border-bottom: 1px solid rgba(151,178,199,.13);
+      }
+
+      .league-chart-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .league-head,
+      .league-tools {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .league-selectors {
+        justify-content: flex-start;
+      }
+
+      .metric-selector {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%;
+      }
+
+      .metric-button { width: 100%; }
+
+      .metric-selector[aria-label="OVR calculation"] {
+        padding: 0 0 8px;
+        border-right: 0;
+        border-bottom: 1px solid rgba(151,178,199,.15);
+      }
+
+      .table-wrap {
+        max-width: 100%;
+        overflow-x: auto;
+      }
+
+      .table {
+        width: max-content;
+        min-width: 760px;
+      }
+
+      .table th:first-child,
+      .table td:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 4;
+        background: rgba(7,17,28,.985);
+        box-shadow: 1px 0 rgba(168,85,247,.18);
+      }
+
+      .table th:first-child { z-index: 6; }
+    }
+
+    @media (max-width: 560px) {
+      body.league-cup-strengths-tool { padding-inline: 8px; }
+
+      .strength-shell::before { margin-left: 0; }
+
+      .strength-header {
+        padding: 24px 15px 20px;
+      }
+
+      .strength-header h1 {
+        font-size: clamp(40px, 14vw, 58px);
+      }
+
+      .snapshot-stack {
+        width: 100%;
+        justify-items: stretch;
+      }
+
+      .snapshot-chip {
+        justify-content: center;
+        white-space: normal;
+        text-align: center;
+      }
+
+      .source-line { text-align: center; }
+
+      .search-input,
+      .tab-button,
+      .division-button,
+      .metric-button {
+        min-height: 48px;
+      }
+
+      .tab-list,
+      .division-tabs,
+      .metric-selector {
+        grid-template-columns: 1fr;
+        display: grid;
+        width: 100%;
+      }
+
+      .live-search-form {
+        grid-template-columns: 1fr;
+      }
+
+      .live-load-button { width: 100%; }
+
+      .live-summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .division-button,
+      .metric-button {
+        width: 100%;
+      }
+
+      .stats-bar {
+        grid-template-columns: 1fr;
+      }
+
+      .stat {
+        min-height: 76px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 12px;
+        border-right: 0;
+      }
+
+      .stat-value {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+        text-align: right;
+      }
+
+      .team-grid {
+        grid-template-columns: 1fr;
+        padding-inline: 9px;
+      }
+
+      .team-card {
+        grid-template-columns: 38px 38px minmax(0, 1fr) auto;
+      }
+
+      .team-ovr {
+        grid-column: auto;
+        text-align: right;
+      }
+
+      .tier-summary {
+        grid-template-columns: 1fr;
+        gap: 4px;
+        min-height: 68px;
+        padding-block: 10px;
+      }
+
+      .tier-count {
+        padding-left: 20px;
+        white-space: normal;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .league-stat {
+        min-height: 66px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        text-align: left;
+      }
+
+      .league-stat b { font-size: 25px; }
+
+      .league-stat span {
+        margin: 0;
+        text-align: right;
+      }
+
+      .column-chart {
+        min-width: 520px;
+      }
+
+      .league-chart-card {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .horizontal-row {
+        grid-template-columns: minmax(90px, 1fr) minmax(80px, 1.2fr) 42px;
+      }
+
+      .bands-chart {
+        grid-template-columns: 1fr;
+      }
+
+      .panel { padding: 12px; }
+    }
+
+    @media (max-width: 380px) {
+      .strength-header h1 { font-size: 38px; }
+      .strength-header,
+      .strength-controls,
+      .panel { padding-inline: 10px; }
+      .team-card {
+        grid-template-columns: 34px 36px minmax(0, 1fr);
+      }
+      .team-ovr {
+        grid-column: 3;
+        text-align: left;
+      }
+      .team-meta { font-size: 10px; }
+      .horizontal-row {
+        grid-template-columns: minmax(78px, 1fr) minmax(72px, 1.1fr) 38px;
+        gap: 6px;
+      }
+      .table { min-width: 700px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .strength-shell,
+      .column-bar i,
+      .horizontal-fill,
+      .strength-fill,
+      .team-card,
+      .tier-section,
+      .live-status[data-state="loading"]::before,
+      .tab-button,
+      .division-button,
+      .metric-button {
+        animation: none !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+      }
+    }
+
+</style>
+<link rel="stylesheet" href="../workspace-upgrades.css?v=2.1.0">
+</head>
+<body class="league-cup-strengths-tool">
+  <main class="strength-shell">
+    <header class="strength-header">
+      <div>
+        <p class="section-kicker">Committed Snapshot</p>
+        <h1>League & Cup Strengths</h1>
+      </div>
+      <div class="snapshot-stack">
+        <div class="snapshot-chip" id="last-updated">Last updated loading</div>
+        <div class="source-line" id="source-line">Cup Rankings source</div>
+      </div>
+    </header>
+
+    <section class="strength-controls" aria-label="Strength controls">
+      <input class="search-input" id="club-search" type="search" placeholder="Search club name or ID" hidden>
+      <div class="tab-list" role="tablist" aria-label="Strength views">
+        <button class="tab-button active" type="button" data-view="live" role="tab" aria-selected="true">League Search</button>
+        <button class="tab-button" type="button" data-view="cup" role="tab" aria-selected="false">Cup Seedings</button>
+        <button class="tab-button" type="button" data-view="league" role="tab" aria-selected="false">League Strength</button>
+      </div>
+    </section>
+
+    <section class="stats-bar" id="stats-bar" aria-label="Snapshot summary" hidden></section>
+
+    <section class="panel" id="cup-panel" aria-labelledby="cup-title" hidden>
+      <div class="cup-tools">
+        <div>
+          <h2 class="panel-title" id="cup-title">Cup Seedings</h2>
+          <p class="panel-subtitle" id="cup-subtitle"></p>
+        </div>
+      </div>
+      <div id="cup-content"></div>
+    </section>
+
+    <section class="panel" id="league-panel" aria-labelledby="league-title" hidden>
+      <div class="league-tools">
+        <div>
+          <h2 class="panel-title" id="league-title">League Strength</h2>
+          <p class="panel-subtitle" id="league-subtitle"></p>
+        </div>
+        <div class="division-tabs" id="division-tabs" aria-label="Division"></div>
+      </div>
+      <div id="league-content"></div>
+    </section>
+
+    <section class="panel live-search-panel" id="live-panel" aria-labelledby="live-title">
+      <div class="live-search-hero">
+        <div class="live-search-copy">
+          <div class="live-eyebrow"><span class="live-signal" aria-hidden="true"></span>Live league intelligence <span>Fresh on every load</span></div>
+          <h2 id="live-title"><span>Find the league.</span><em>Read the room.</em></h2>
+          <p>Fetch the current league membership and every club’s squad directly from MFL, including fresh ratings and retirement outlook.</p>
+          <div class="live-feature-rail" aria-label="Live search capabilities">
+            <span><b>01</b>Name or comp ID</span>
+            <span><b>02</b>Live squad ratings</span>
+            <span><b>03</b>Fresh on every search</span>
+          </div>
+        </div>
+
+        <div class="live-query-console">
+          <div class="console-chrome">
+            <span>LEAGUE_LOOKUP / LIVE</span>
+            <span class="console-online"><i aria-hidden="true"></i>MFL API</span>
+          </div>
+          <form class="live-search-form" id="live-search-form" novalidate>
+            <div class="live-search-field">
+              <label class="field-label" for="live-owned-club">Your clubs</label>
+              <select id="live-owned-club" class="search-input" style="width:100%;min-width:0" disabled><option value="">Loading your clubs…</option></select>
+              <p class="field-hint" id="live-owned-status" role="status"></p>
+            </div>
+            <div class="live-search-field">
+              <label class="field-label" for="live-league-search"><span>Query</span> League name, competition ID or club ID</label>
+              <div class="live-command-line">
+                <span class="command-prefix" aria-hidden="true">/league</span>
+                <input
+                  class="live-search-input"
+                  id="live-league-search"
+                  type="search"
+                  inputmode="search"
+                  autocomplete="off"
+                  placeholder="Diamond League or 16757"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-controls="league-suggestions"
+                  aria-expanded="false"
+                  aria-describedby="live-search-hint"
+                >
+              </div>
+              <div class="league-suggestions" id="league-suggestions" role="listbox" hidden></div>
+              <p class="field-hint" id="live-search-hint">Choose one of your clubs, search for a league, or enter a competition or club ID.</p>
+            </div>
+            <button class="live-load-button" id="live-load-button" type="submit" disabled>Run live scan</button>
+          </form>
+          <div class="live-status" id="live-status" role="status" aria-live="polite" data-state="loading">Loading current league list…</div>
+        </div>
+      </div>
+      <div class="live-results-stage" id="live-results"></div>
+    </section>
+
+    <section class="status-box" id="status-box">Loading snapshot</section>
+  </main>
+
+  <script>
+    (() => {
+      const CLOUDFLARE_SNAPSHOT_URL = "https://cup-rankings-scanner.ricky-hyde-selling.workers.dev/league-cup-strengths-data.json";
+      const REMOTE_SNAPSHOT_URL = "https://rickyhyde-ship-it.github.io/Cup-Rankings/league-cup-strengths-data.json";
+      const LOCAL_SNAPSHOT_URL = "data/league-cup-strengths-data.json";
+      const API_BASE = "https://api.playmfl.com";
+      const MAX_LIVE_LEAGUE_CLUBS = 96;
+      const CUP_TIERS = [
+        { name: "Titans", cls: "titans", size: 32, color: "#d8b4fe" },
+        { name: "Elite 1", cls: "elite", size: 32, color: "#c084fc" },
+        { name: "Elite 2", cls: "elite", size: 32, color: "#c084fc" },
+        { name: "Contender 1", cls: "contender", size: 32, color: "#a78bfa" },
+        { name: "Contender 2", cls: "contender", size: 32, color: "#a78bfa" },
+        { name: "Contender 3", cls: "contender", size: 32, color: "#a78bfa" },
+        { name: "Contender 4", cls: "contender", size: 32, color: "#a78bfa" },
+        { name: "Challenger 1", cls: "challenger", size: 32, color: "#48f59a" },
+        { name: "Challenger 2", cls: "challenger", size: 32, color: "#48f59a" },
+        { name: "Challenger 3", cls: "challenger", size: 32, color: "#48f59a" },
+        { name: "Challenger 4", cls: "challenger", size: 32, color: "#48f59a" },
+        { name: "Challenger 5", cls: "challenger", size: 32, color: "#48f59a" },
+        { name: "Challenger 6", cls: "challenger", size: 32, color: "#48f59a" },
+        { name: "Challenger 7", cls: "challenger", size: 32, color: "#48f59a" },
+        { name: "Challenger 8", cls: "challenger", size: 32, color: "#48f59a" },
+        { name: "Rivals 1", cls: "rivals", size: 32, color: "#f59e0b" },
+        { name: "Rivals 2", cls: "rivals", size: 32, color: "#f59e0b" },
+        { name: "Rivals 3", cls: "rivals", size: 32, color: "#f59e0b" },
+        { name: "Rivals 4", cls: "rivals", size: 32, color: "#f59e0b" },
+        { name: "Rivals 5", cls: "rivals", size: 32, color: "#f59e0b" },
+        { name: "Rivals 6", cls: "rivals", size: 32, color: "#f59e0b" },
+        { name: "Rivals 7", cls: "rivals", size: 32, color: "#f59e0b" },
+        { name: "Rivals 8", cls: "rivals", size: 32, color: "#f59e0b" },
+        { name: "Rivals 9", cls: "rivals", size: 32, color: "#f59e0b" },
+        { name: "Rivals 10", cls: "rivals", size: 32, color: "#f59e0b" },
+        { name: "Rivals 11", cls: "rivals", size: 32, color: "#f59e0b" },
+        { name: "Rivals 12", cls: "rivals", size: 32, color: "#f59e0b" },
+        { name: "Rivals 13", cls: "rivals", size: 32, color: "#f59e0b" },
+        { name: "Rivals 14", cls: "rivals", size: 32, color: "#f59e0b" },
+        { name: "Rivals 15", cls: "rivals", size: 32, color: "#f59e0b" },
+        { name: "Rivals 16", cls: "rivals", size: 32, color: "#f59e0b" },
+      ];
+      const state = {
+        snapshot: null,
+        ranked: [],
+        rankInfo: new Map(),
+        activeView: "live",
+        activeDivision: 1,
+        activeMetric: "top11",
+        activeOvrMode: "total",
+        search: "",
+        competitions: [],
+        selectedCompetitionId: null,
+        liveCompetition: null,
+        liveClubs: [],
+        liveFailures: [],
+        liveMetric: "top11",
+        liveOvrMode: "average",
+        liveLoadRun: 0,
+        liveAbortController: null,
+        highlightedSuggestion: -1,
+        competitionsInitialized: false,
+        ownedClubs: [],
+      };
+      const els = {
+        status: document.getElementById("status-box"),
+        lastUpdated: document.getElementById("last-updated"),
+        sourceLine: document.getElementById("source-line"),
+        statsBar: document.getElementById("stats-bar"),
+        cupPanel: document.getElementById("cup-panel"),
+        leaguePanel: document.getElementById("league-panel"),
+        livePanel: document.getElementById("live-panel"),
+        cupSubtitle: document.getElementById("cup-subtitle"),
+        cupContent: document.getElementById("cup-content"),
+        leagueSubtitle: document.getElementById("league-subtitle"),
+        leagueContent: document.getElementById("league-content"),
+        divisionTabs: document.getElementById("division-tabs"),
+        search: document.getElementById("club-search"),
+        liveForm: document.getElementById("live-search-form"),
+        liveSearch: document.getElementById("live-league-search"),
+        liveLoadButton: document.getElementById("live-load-button"),
+        liveSuggestions: document.getElementById("league-suggestions"),
+        liveStatus: document.getElementById("live-status"),
+        liveResults: document.getElementById("live-results"),
+      };
+      const metricLabels = {
+        top11: "Top 11",
+        top16: "Top 16",
+        topFull: "Total Squad",
+      };
+      function availableMetricEntries(clubs) {
+        return Object.entries(metricLabels).filter(([metric]) =>
+          metric === "top11" || clubs.some((club) => Number(club?.[metric]) > 0)
+        );
+      }
+      const ovrModeLabels = {
+        total: "Total OVR",
+        average: "Average OVR",
+      };
+      const CHART_COLORS = ["#c084fc", "#a855f7", "#7c3aed", "#48f59a", "#22c55e", "#f59e0b"];
+
+      function escapeHtml(value) {
+        return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          "\"": "&quot;",
+          "'": "&#039;",
+        })[char]);
+      }
+
+      function formatNumber(value) {
+        return new Intl.NumberFormat("en-GB").format(Number(value) || 0);
+      }
+
+      function formatDate(value) {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "Last updated unknown";
+        return `Last updated ${date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}, ${date.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
+      }
+
+      function initials(name) {
+        return String(name || "Club")
+          .split(/\s+/)
+          .filter(Boolean)
+          .map((part) => part[0])
+          .join("")
+          .toUpperCase()
+          .slice(0, 2) || "FC";
+      }
+
+      function safeColor(color, fallback) {
+        return /^#[0-9a-f]{3,8}$/i.test(String(color || "")) ? color : fallback;
+      }
+
+      function metricTotalValue(club, metric = state.activeMetric) {
+        return Number(club?.[metric]) || 0;
+      }
+
+      function metricAverageDivisor(club, metric = state.activeMetric) {
+        const playerCount = Math.max(1, Number(club?.playerCount) || 0);
+        if (metric === "top11") return 11;
+        if (metric === "top16") return Math.min(16, playerCount);
+        if (metric === "topFull") return playerCount;
+        return 1;
+      }
+
+      function roundStrengthValue(value) {
+        return state.activeOvrMode === "average"
+          ? Math.round(value * 10) / 10
+          : Math.round(value);
+      }
+
+      function metricValue(club, metric = state.activeMetric) {
+        const total = metricTotalValue(club, metric);
+        if (state.activeOvrMode !== "average") return total;
+        return roundStrengthValue(total / metricAverageDivisor(club, metric));
+      }
+
+      function formatStrengthValue(value) {
+        const number = Number(value) || 0;
+        if (state.activeOvrMode !== "average") return formatNumber(number);
+        return number.toLocaleString("en-GB", { maximumFractionDigits: 1, minimumFractionDigits: 0 });
+      }
+
+      function activeMetricLabel() {
+        return `${metricLabels[state.activeMetric]} ${ovrModeLabels[state.activeOvrMode]}`;
+      }
+
+      function liveMetricValue(club, metric = state.liveMetric) {
+        const total = Number(club?.[metric]) || 0;
+        if (state.liveOvrMode !== "average") return total;
+        const playerCount = Math.max(1, Number(club?.playerCount) || 0);
+        const divisor = metric === "top11"
+          ? 11
+          : metric === "top16"
+            ? Math.min(16, playerCount)
+            : playerCount;
+        return Math.round((total / divisor) * 10) / 10;
+      }
+
+      function formatLiveStrength(value) {
+        const number = Number(value) || 0;
+        return state.liveOvrMode === "average"
+          ? number.toLocaleString("en-GB", { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+          : formatNumber(Math.round(number));
+      }
+
+      function liveMetricLabel(metric = state.liveMetric) {
+        return `${metricLabels[metric]} ${ovrModeLabels[state.liveOvrMode]}`;
+      }
+
+      function setLiveStatus(message, status = "idle") {
+        els.liveStatus.hidden = false;
+        els.liveStatus.dataset.state = status;
+        els.liveStatus.textContent = message;
+      }
+
+      function normalizeArray(payload, keys = []) {
+        if (Array.isArray(payload)) return payload;
+        for (const key of keys) {
+          if (Array.isArray(payload?.[key])) return payload[key];
+        }
+        return [];
+      }
+
+      function getRetirements(club) {
+        const source = club?.retirements;
+        if (!source) return { available: false, none: 0, yellow: 0, orange: 0, red: 0 };
+        return {
+          available: true,
+          none: Number(source.none) || 0,
+          yellow: Number(source.yellow) || 0,
+          orange: Number(source.orange) || 0,
+          red: Number(source.red) || 0,
+        };
+      }
+
+      function aggregateRetirements(clubs) {
+        return clubs.reduce((total, club) => {
+          const counts = getRetirements(club);
+          if (!counts.available) return total;
+          total.availableClubs += 1;
+          total.none += counts.none;
+          total.yellow += counts.yellow;
+          total.orange += counts.orange;
+          total.red += counts.red;
+          return total;
+        }, { availableClubs: 0, none: 0, yellow: 0, orange: 0, red: 0 });
+      }
+
+      function retirementSummaryValue(summary, key) {
+        return summary.availableClubs ? formatNumber(summary[key]) : "—";
+      }
+
+      function retirementChips(club) {
+        const counts = getRetirements(club);
+        if (!counts.available) {
+          return '<div class="retirement-strip"><span class="retirement-pending">Retirement data loading</span></div>';
+        }
+        return `
+          <div class="retirement-strip" aria-label="Retirement outlook: ${counts.none} not retiring, ${counts.yellow} in 3 seasons, ${counts.orange} in 2 seasons, ${counts.red} in 1 season">
+            <span class="retirement-chip retirement-none" title="Not retiring within 3 seasons">NONE <strong>${formatNumber(counts.none)}</strong></span>
+            <span class="retirement-chip retirement-yellow" title="Retiring in 3 seasons">3Y <strong>${formatNumber(counts.yellow)}</strong></span>
+            <span class="retirement-chip retirement-orange" title="Retiring in 2 seasons">2Y <strong>${formatNumber(counts.orange)}</strong></span>
+            <span class="retirement-chip retirement-red" title="Retiring in 1 season">1Y <strong>${formatNumber(counts.red)}</strong></span>
+          </div>
+        `;
+      }
+
+      function clubResultFromPlayerGroup(group, fallbackClub = {}) {
+        const club = group?.club || fallbackClub || {};
+        const overalls = group?.overalls || [];
+        const clubId = Number(club?.id || club?.clubId || fallbackClub?.id || fallbackClub?.clubId);
+        return {
+          clubId,
+          clubName: club?.name || club?.clubName || fallbackClub?.name || fallbackClub?.clubName || `Club ${clubId}`,
+          division: Number(club?.division || fallbackClub?.division) || "—",
+          mainColor: club?.mainColor || fallbackClub?.mainColor || "#1f2937",
+          secondaryColor: club?.secondaryColor || fallbackClub?.secondaryColor || "#a855f7",
+          playerCount: overalls.length,
+          top11: sumTopOveralls(overalls.map((overall) => ({ metadata: { overall } })), 11),
+          top16: sumTopOveralls(overalls.map((overall) => ({ metadata: { overall } })), 16),
+          topFull: overalls.reduce((sum, overall) => sum + overall, 0),
+          retirements: group?.retirements || { none: 0, yellow: 0, orange: 0, red: 0 },
+        };
+      }
+
+let liveRequestQueue = Promise.resolve();
+let liveNextRequestAt = 0;
+let liveCooldownUntil = 0;
+function liveWait(ms, signal) {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) { reject(new DOMException('Cancelled', 'AbortError')); return; }
+    const aborted = () => { clearTimeout(timer); reject(new DOMException('Cancelled', 'AbortError')); };
+    const timer = setTimeout(() => { signal?.removeEventListener('abort', aborted); resolve(); }, Math.max(0, ms));
+    signal?.addEventListener('abort', aborted, { once:true });
+  });
+}
+function fetchLiveJson(path, signal, attempts = 3) {
+  const task = liveRequestQueue.catch(() => {}).then(async () => {
+    let lastError;
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+      await liveWait(Math.max(liveNextRequestAt, liveCooldownUntil) - Date.now(), signal);
+      if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError');
+      liveNextRequestAt = Date.now() + 1018;
+      try {
+        const response = await fetch(API_BASE + path, {
+          cache:'no-store', headers:{Accept:'application/json'},
+          signal:AbortSignal.any([AbortSignal.timeout(20000), ...(signal ? [signal] : [])]),
+        });
+        const body = await response.text();
+        const limited = response.status === 429 || (response.status === 403 && /rate.?limit|too many requests|throttl/i.test(body));
+        if (limited) liveCooldownUntil = Date.now() + 15000;
+        if (!response.ok) {
+          const error = new Error(limited ? 'MFL rate limit detected. Retrying after 15 seconds.' : 'MFL API returned ' + response.status + '. Live ratings could not be loaded.');
+          error.status = response.status;
+          error.retryable = limited || response.status >= 500;
+          throw error;
+        }
+        return JSON.parse(body);
+      } catch (error) {
+        if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError');
+        lastError = error;
+        if (error.retryable === false || attempt === attempts) throw error;
+      }
+    }
+    throw lastError;
+  });
+  liveRequestQueue = task.catch(() => {});
+  return task;
+}
+async function fetchClubLiveStrength(club, signal) {
+  const clubId = Number(club?.id || club?.clubId);
+  if (!Number.isSafeInteger(clubId) || clubId <= 0) throw new Error('Invalid club ID in league membership');
+  const payload = await fetchLiveJson('/clubs/' + clubId + '/players', signal);
+  const records = Array.isArray(payload) ? payload : payload?.players || payload?.items || payload?.value;
+  if (!Array.isArray(records)) throw new Error('Invalid live squad response for ' + (club.name || clubId));
+  const seen = new Set(), group = {club,overalls:[],retirements:{none:0,yellow:0,orange:0,red:0}};
+  for (const record of records) {
+    const player = record?.player || record;
+    const id = Number(player?.id);
+    if (Number.isSafeInteger(id)) { if (seen.has(id)) continue; seen.add(id); }
+    const overall = Number(player?.metadata?.overall ?? player?.overall);
+    if (!Number.isFinite(overall) || overall <= 0) throw new Error('A live rating is missing for ' + (club.name || clubId) + '. Try again.');
+    group.overalls.push(overall);
+    const years = Number(player?.metadata?.retirementYears);
+    group.retirements[years===3?'yellow':years===2?'orange':years===1?'red':'none']++;
+  }
+  return clubResultFromPlayerGroup(group, club);
+}
+
+      function sumTopOveralls(players, count) {
+        return players
+          .map((player) => Number(player?.metadata?.overall) || 0)
+          .filter((overall) => overall > 0)
+          .sort((a, b) => b - a)
+          .slice(0, count)
+          .reduce((sum, overall) => sum + overall, 0);
+      }
+
+      function avg(values) {
+        if (!values.length) return 0;
+        return roundStrengthValue(values.reduce((sum, value) => sum + value, 0) / values.length);
+      }
+
+      function calcStats(values) {
+        if (!values.length) return null;
+        const asc = [...values].sort((a, b) => a - b);
+        const desc = [...values].sort((a, b) => b - a);
+        const top = (pct) => avg(desc.slice(0, Math.max(1, Math.ceil(desc.length * pct))));
+        const bot = (pct) => avg(asc.slice(0, Math.max(1, Math.ceil(asc.length * pct))));
+        return {
+          max: desc[0],
+          min: asc[0],
+          mean: avg(values),
+          median: roundStrengthValue(asc.length % 2
+            ? asc[Math.floor(asc.length / 2)]
+            : (asc[asc.length / 2 - 1] + asc[asc.length / 2]) / 2),
+          top1: top(0.01),
+          top5: top(0.05),
+          top10: top(0.10),
+          top25: top(0.25),
+          bot25: bot(0.25),
+          bot10: bot(0.10),
+          bot5: bot(0.05),
+          count: values.length,
+        };
+      }
+
+      function chartColor(index) {
+        return CHART_COLORS[index % CHART_COLORS.length];
+      }
+
+      function buildDistribution(clubs) {
+        const values = clubs.map((club) => metricValue(club)).filter((value) => value > 0);
+        if (!values.length) return [];
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        const targetBuckets = Math.min(18, Math.max(8, Math.ceil(Math.sqrt(values.length))));
+        const rawStep = Math.max(1, (max - min) / targetBuckets);
+        const step = Math.max(1, Math.ceil(rawStep / 5) * 5);
+        const start = Math.floor(min / step) * step;
+        const end = Math.ceil(max / step) * step;
+        const buckets = Array.from({ length: Math.max(1, Math.floor((end - start) / step) + 1) }, (_, index) => ({
+          label: String(start + index * step),
+          value: 0,
+        }));
+
+        values.forEach((value) => {
+          const index = Math.min(buckets.length - 1, Math.max(0, Math.floor((value - start) / step)));
+          buckets[index].value += 1;
+        });
+
+        return buckets;
+      }
+
+      function renderColumnChart(title, items, colorOffset = 0) {
+        if (!items.length) return "";
+        const max = Math.max(...items.map((item) => Number(item.value) || 0), 1);
+        return `
+          <article class="league-chart-card">
+            <h4 class="chart-title">${escapeHtml(title)}</h4>
+            <div class="column-chart" style="--bar-count:${items.length}" role="img" aria-label="${escapeHtml(title)}">
+              ${items.map((item, index) => {
+                const value = Number(item.value) || 0;
+                const height = value > 0 ? Math.max(2, Math.round((value / max) * 100)) : 2;
+                const color = chartColor(index + colorOffset);
+                return `
+                  <div class="column-bar" title="${escapeHtml(item.label)}: ${escapeHtml(value)}" style="--bar-color:${escapeHtml(color)}">
+                    <i style="height:${height}%"></i>
+                    <span>${escapeHtml(item.label)}</span>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+          </article>
+        `;
+      }
+
+      function renderTopClubsChart(clubs) {
+        const topClubs = [...clubs]
+          .sort((a, b) => metricValue(b) - metricValue(a) || String(a.clubName).localeCompare(String(b.clubName)))
+          .slice(0, 20);
+        const max = Math.max(...topClubs.map((club) => metricValue(club)), 1);
+        return `
+          <article class="league-chart-card">
+            <h4 class="chart-title">Top 20 Clubs</h4>
+            <div class="horizontal-chart" role="img" aria-label="Top 20 clubs by ${escapeHtml(activeMetricLabel())}">
+              ${topClubs.map((club) => {
+                const value = metricValue(club);
+                const width = Math.max(3, Math.round((value / max) * 100));
+                return `
+                  <div class="horizontal-row" title="${escapeHtml(club.clubName)}: ${escapeHtml(value)}">
+                    <span class="horizontal-label">${escapeHtml(club.clubName)}</span>
+                    <span class="horizontal-track"><i class="horizontal-fill" style="width:${width}%"></i></span>
+                    <span class="horizontal-value">${escapeHtml(formatStrengthValue(value))}</span>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+          </article>
+        `;
+      }
+
+      function buildStrengthBands(clubs) {
+        const total = clubs.length;
+        const labels = ["Top 10%", "P75-90", "P50-75", "P25-50", "P10-25", "Bottom 10%"];
+        const cuts = [0.10, 0.25, 0.50, 0.75, 0.90, 1];
+        let previous = 0;
+        return labels.map((label, index) => {
+          const next = Math.min(total, Math.ceil(total * cuts[index]));
+          const count = Math.max(0, next - previous);
+          previous = next;
+          return { label, count, color: chartColor(index + 3) };
+        });
+      }
+
+      function renderBandsChart(clubs) {
+        const bands = buildStrengthBands(clubs);
+        const total = Math.max(1, clubs.length);
+        let angle = 0;
+        const gradient = bands.map((band) => {
+          const nextAngle = angle + (band.count / total) * 360;
+          const segment = `${band.color} ${angle.toFixed(2)}deg ${nextAngle.toFixed(2)}deg`;
+          angle = nextAngle;
+          return segment;
+        }).join(", ");
+
+        return `
+          <article class="league-chart-card">
+            <h4 class="chart-title">Squad Strength Bands</h4>
+            <div class="bands-chart" role="img" aria-label="Squad strength band distribution">
+              <div class="donut" style="background:conic-gradient(${escapeHtml(gradient)})"></div>
+              <div class="chart-legend">
+                ${bands.map((band) => `
+                  <div class="legend-item">
+                    <span class="legend-swatch" style="--swatch-color:${escapeHtml(band.color)}"></span>
+                    <span>${escapeHtml(band.label)}</span>
+                    <span class="legend-count">${formatNumber(band.count)}</span>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+          </article>
+        `;
+      }
+
+      function renderLeagueCharts(clubs, stats) {
+        const percentileItems = [
+          { label: "Top 1%", value: stats.top1 },
+          { label: "Top 5%", value: stats.top5 },
+          { label: "Top 10%", value: stats.top10 },
+          { label: "Top 25%", value: stats.top25 },
+          { label: "Median", value: stats.median },
+          { label: "Bot 25%", value: stats.bot25 },
+          { label: "Bot 10%", value: stats.bot10 },
+          { label: "Bot 5%", value: stats.bot5 },
+        ];
+
+        return `
+          <div class="league-chart-grid">
+            ${renderColumnChart("OVR Distribution", buildDistribution(clubs), 0)}
+            ${renderColumnChart("Strength Percentiles", percentileItems, 2)}
+            ${renderTopClubsChart(clubs)}
+            ${renderBandsChart(clubs)}
+          </div>
+        `;
+      }
+
+      function eligibleResults() {
+        return (state.snapshot?.results || []).filter((club) => Number(club.playerCount) >= 11);
+      }
+
+      function searchMatches(club) {
+        if (!state.search) return true;
+        const haystack = `${club.clubName || ""} ${club.clubId || ""}`.toLowerCase();
+        return haystack.includes(state.search);
+      }
+
+      function buildCupTiers(clubs) {
+        const tiers = [];
+        let offset = 0;
+        for (const tier of CUP_TIERS) {
+          const tierClubs = clubs.slice(offset, offset + tier.size);
+          if (!tierClubs.length) break;
+          tiers.push({ ...tier, rankStart: offset + 1, clubs: tierClubs });
+          offset += tier.size;
+        }
+        let aspirants = 1;
+        while (offset < clubs.length) {
+          const tierClubs = clubs.slice(offset, offset + 32);
+          tiers.push({
+            name: clubs.length - offset <= 32 && aspirants === 1 ? "Aspirants" : `Aspirants ${aspirants}`,
+            cls: "aspirants",
+            color: "#9da9b7",
+            rankStart: offset + 1,
+            clubs: tierClubs,
+          });
+          offset += 32;
+          aspirants += 1;
+        }
+        return tiers;
+      }
+
+      function hydrateRankInfo(tiers) {
+        state.rankInfo.clear();
+        for (const tier of tiers) {
+          tier.clubs.forEach((club, index) => {
+            state.rankInfo.set(String(club.clubId), {
+              rank: tier.rankStart + index,
+              tier: tier.name,
+              color: tier.color,
+            });
+          });
+        }
+      }
+
+      function teamCard(club, info, metric = "top11") {
+        const rank = info?.rank ? `#${info.rank}` : "";
+        const color = safeColor(info?.color, "var(--accent)");
+        const main = safeColor(club.mainColor, "#1f2937");
+        const secondary = safeColor(club.secondaryColor, "#a855f7");
+        const partial = Number(club.playerCount) >= 11 && Number(club.playerCount) <= 15;
+        const value = metricTotalValue(club, metric);
+        return `
+          <article class="team-card" style="--tier-color:${escapeHtml(color)}">
+            <span class="team-rank">${escapeHtml(rank)}</span>
+            <a class="team-swatch" href="https://app.playmfl.com/clubs/${encodeURIComponent(club.clubId)}/squad" target="_blank" rel="noopener" style="background:${escapeHtml(main)};border:2px solid ${escapeHtml(secondary)}">${escapeHtml(initials(club.clubName))}</a>
+            <div>
+              <a class="team-name" href="https://app.playmfl.com/clubs/${encodeURIComponent(club.clubId)}/squad" target="_blank" rel="noopener">${escapeHtml(club.clubName)}</a>
+              <div class="team-meta">Div ${escapeHtml(club.division || "?")} · ${escapeHtml(club.playerCount || 0)} players · ${escapeHtml(info?.tier || "Unranked")}</div>
+              ${retirementChips(club)}
+              ${partial ? '<span class="tag">Partial</span>' : ""}
+            </div>
+            <div class="team-ovr">${escapeHtml(value)}<small>${escapeHtml(metricLabels[metric] || "OVR")}</small></div>
+          </article>
+        `;
+      }
+
+      function renderStats() {
+        const results = state.snapshot?.results || [];
+        const ranked = results.filter((club) => Number(club.playerCount) >= 11);
+        const partial = results.filter((club) => Number(club.playerCount) >= 11 && Number(club.playerCount) <= 15);
+        const incomplete = results.filter((club) => Number(club.playerCount) <= 10);
+        const failed = state.snapshot?.failed || [];
+        const retirements = aggregateRetirements(results);
+        const items = [
+          { label: "Total clubs", value: results.length },
+          { label: "Ranked", value: ranked.length },
+          { label: "Partial", value: partial.length },
+          { label: "Incomplete", value: incomplete.length },
+          { label: "None retiring", value: retirementSummaryValue(retirements, "none"), tone: "retirement-none" },
+          { label: "Retiring in 3Y", value: retirementSummaryValue(retirements, "yellow"), tone: "retirement-yellow" },
+          { label: "Retiring in 2Y", value: retirementSummaryValue(retirements, "orange"), tone: "retirement-orange" },
+          { label: "Retiring in 1Y", value: retirementSummaryValue(retirements, "red"), tone: "retirement-red" },
+          { label: "Failed", value: failed.length },
+        ];
+        els.statsBar.innerHTML = items.map(({ label, value, tone = "" }) => `
+          <div class="stat ${escapeHtml(tone)}">
+            <span class="stat-value">${typeof value === "number" ? formatNumber(value) : escapeHtml(value)}</span>
+            <span class="stat-label">${escapeHtml(label)}</span>
+          </div>
+        `).join("");
+      }
+
+      function renderCup() {
+        state.ranked = eligibleResults().sort((a, b) => metricValue(b) - metricValue(a) || String(a.clubName).localeCompare(String(b.clubName)));
+        const tiers = buildCupTiers(state.ranked);
+        hydrateRankInfo(tiers);
+        const matching = state.ranked.filter(searchMatches);
+        els.cupSubtitle.textContent = state.search
+          ? `${formatNumber(matching.length)} matching ranked clubs`
+          : `${formatNumber(state.ranked.length)} eligible clubs grouped into ${formatNumber(tiers.length)} cup tiers`;
+
+        if (state.search) {
+          els.cupContent.innerHTML = matching.length
+            ? `<div class="search-results">${matching.slice(0, 200).map((club) => teamCard(club, state.rankInfo.get(String(club.clubId)), state.activeMetric)).join("")}</div>`
+            : '<div class="empty">No matching clubs in the committed snapshot.</div>';
+          return;
+        }
+
+        els.cupContent.innerHTML = `<div class="tier-list">${
+          tiers.map((tier, index) => `
+            <details class="tier-section" data-tier-index="${index}" style="--tier-color:${escapeHtml(tier.color)}" ${index < 3 ? "open" : ""}>
+              <summary class="tier-summary">
+                <span class="tier-name"><i class="tier-dot"></i>${escapeHtml(tier.name)}</span>
+                <span class="tier-count">#${formatNumber(tier.rankStart)}-${formatNumber(tier.rankStart + tier.clubs.length - 1)} · ${formatNumber(tier.clubs.length)} clubs</span>
+              </summary>
+              <div class="team-grid"></div>
+            </details>
+          `).join("")
+        }</div>`;
+
+        els.cupContent.querySelectorAll(".tier-section").forEach((details) => {
+          const render = () => {
+            if (details.dataset.rendered === "true") return;
+            const tier = tiers[Number(details.dataset.tierIndex)];
+            details.querySelector(".team-grid").innerHTML = tier.clubs
+              .map((club, index) => teamCard(club, { rank: tier.rankStart + index, tier: tier.name, color: tier.color }, state.activeMetric))
+              .join("");
+            details.dataset.rendered = "true";
+          };
+          details.addEventListener("toggle", () => {
+            if (details.open) render();
+          });
+          if (details.open) render();
+        });
+      }
+
+      function renderDivisionTabs() {
+        const divisions = state.snapshot?.divisions || [];
+        els.divisionTabs.innerHTML = divisions.map((division) => {
+          const count = (state.snapshot?.results || []).filter((club) => Number(club.division) === Number(division.id)).length;
+          return `<button class="division-button${Number(division.id) === state.activeDivision ? " active" : ""}" type="button" data-division="${escapeHtml(division.id)}">${escapeHtml(division.name)} (${formatNumber(count)})</button>`;
+        }).join("");
+      }
+
+      function renderLeague() {
+        window.AgentStrengthBenchmarks?.update(state.snapshot, state.activeMetric, state.activeOvrMode, state.snapshotSource || 'Published snapshot', state.activeView);
+        const division = (state.snapshot?.divisions || []).find((item) => Number(item.id) === state.activeDivision) || { name: `Division ${state.activeDivision}` };
+        const divisionClubs = (state.snapshot?.results || [])
+          .filter((club) => Number(club.division) === state.activeDivision);
+        const clubs = divisionClubs.filter((club) => Number(club.playerCount) >= 11);
+        const values = clubs.map((club) => metricValue(club)).filter((value) => value > 0);
+        const stats = calcStats(values);
+        const rankedClubs = [...clubs].sort((a, b) => metricValue(b) - metricValue(a));
+        const retirements = aggregateRetirements(divisionClubs);
+        const rankByClub = new Map(rankedClubs.map((club, index) => [String(club.clubId), index + 1]));
+        const visible = rankedClubs.filter(searchMatches);
+        const maxValue = Math.max(...visible.map((club) => metricValue(club)), 1);
+
+        els.leagueSubtitle.textContent = `${division.name} · ${formatNumber(clubs.length)} eligible clubs · ${activeMetricLabel()}`;
+
+        if (!stats) {
+          els.leagueContent.innerHTML = '<div class="empty">No eligible clubs for this division.</div>';
+          return;
+        }
+
+        els.leagueContent.innerHTML = `
+          <div class="league-layout">
+            <div class="league-head">
+              <div>
+                <h3 class="league-title">${escapeHtml(division.name)} League</h3>
+                <p class="panel-subtitle">${state.search ? `${formatNumber(visible.length)} matching clubs` : `${formatNumber(clubs.length)} ranked clubs`}</p>
+              </div>
+              <div class="league-selectors">
+                <div class="metric-selector" aria-label="OVR calculation">
+                  ${Object.entries(ovrModeLabels).map(([mode, label]) => `<button class="metric-button${mode === state.activeOvrMode ? " active" : ""}" type="button" data-ovr-mode="${escapeHtml(mode)}">${escapeHtml(label)}</button>`).join("")}
+                </div>
+                <div class="metric-selector" aria-label="Strength metric">
+                  ${availableMetricEntries(clubs).map(([metric, label]) => `<button class="metric-button${metric === state.activeMetric ? " active" : ""}" type="button" data-metric="${escapeHtml(metric)}">${escapeHtml(label)}</button>`).join("")}
+                </div>
+              </div>
+            </div>
+            <div class="stats-grid">
+              ${[
+                ["Top 1%", stats.top1],
+                ["Top 5%", stats.top5],
+                ["Top 10%", stats.top10],
+                ["Top 25%", stats.top25],
+                ["Mean", stats.mean],
+                ["Median", stats.median],
+                ["Bottom 25%", stats.bot25],
+                ["Highest", stats.max],
+              ].map(([label, value]) => `<div class="league-stat"><b>${escapeHtml(formatStrengthValue(value))}</b><span>${escapeHtml(label)}</span></div>`).join("")}
+              <div class="retirement-heading">Retirement outlook · players</div>
+              <div class="league-stat retirement-none"><b>${escapeHtml(retirementSummaryValue(retirements, "none"))}</b><span>None retiring</span></div>
+              <div class="league-stat retirement-yellow"><b>${escapeHtml(retirementSummaryValue(retirements, "yellow"))}</b><span>Retiring in 3 seasons</span></div>
+              <div class="league-stat retirement-orange"><b>${escapeHtml(retirementSummaryValue(retirements, "orange"))}</b><span>Retiring in 2 seasons</span></div>
+              <div class="league-stat retirement-red"><b>${escapeHtml(retirementSummaryValue(retirements, "red"))}</b><span>Retiring in 1 season</span></div>
+            </div>
+            ${renderLeagueCharts(clubs, stats)}
+            <div class="table-heading">
+              <div>
+                <h4 class="table-title">Full Rankings</h4>
+                <p class="panel-subtitle">${formatNumber(Math.min(visible.length,250))} of ${formatNumber(visible.length)} ${state.search ? "matching" : "ranked"} clubs shown by ${escapeHtml(activeMetricLabel())}</p>
+              </div>
+            </div>
+            <div class="table-wrap" data-wide-content>
+              <table class="table">
+                <thead>
+                  <tr><th>#</th><th>Club</th><th>Division</th><th>Squad</th><th>Percentile</th><th>${escapeHtml(activeMetricLabel())}</th><th title="Not retiring within 3 seasons">None</th><th title="Retiring in 3 seasons">3Y</th><th title="Retiring in 2 seasons">2Y</th><th title="Retiring in 1 season">1Y</th></tr>
+                </thead>
+                <tbody>
+                  ${visible.slice(0, 250).map((club, index) => {
+                    const value = metricValue(club);
+                    const barWidth = Math.max(3, Math.round((value / maxValue) * 100));
+                    const rankInfo = state.rankInfo.get(String(club.clubId));
+                    const retirement = getRetirements(club);
+                    return `
+                      <tr>
+                        <td>${formatNumber(rankByClub.get(String(club.clubId)) || index + 1)}</td>
+                        <td><a class="team-name" href="https://app.playmfl.com/clubs/${encodeURIComponent(club.clubId)}/squad" target="_blank" rel="noopener">${escapeHtml(club.clubName)}</a></td>
+                        <td>${escapeHtml(division.name)}</td>
+                        <td>${escapeHtml(club.playerCount)} players</td>
+                        <td>${escapeHtml(rankInfo?.tier || "Ranked")}</td>
+                        <td>
+                          <div class="strength-bar">
+                            <span>${escapeHtml(formatStrengthValue(value))}</span>
+                            <span class="strength-track"><i class="strength-fill" style="width:${barWidth}%"></i></span>
+                          </div>
+                        </td>
+                        <td class="retirement-cell retirement-none">${retirement.available ? formatNumber(retirement.none) : "—"}</td>
+                        <td class="retirement-cell retirement-yellow">${retirement.available ? formatNumber(retirement.yellow) : "—"}</td>
+                        <td class="retirement-cell retirement-orange">${retirement.available ? formatNumber(retirement.orange) : "—"}</td>
+                        <td class="retirement-cell retirement-red">${retirement.available ? formatNumber(retirement.red) : "—"}</td>
+                      </tr>
+                    `;
+                  }).join("")}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }
+
+      function filterLeagueCompetitions(query) {
+        const needle = String(query || "").trim().toLowerCase();
+        if (needle.length < 2) return [];
+        return state.competitions
+          .filter((competition) => {
+            const type = String(competition?.type || competition?.subType || "").toUpperCase();
+            if (type && type !== "LEAGUE") return false;
+            return String(competition?.name || "").toLowerCase().includes(needle)
+              || String(competition?.code || "").toLowerCase().includes(needle)
+              || String(competition?.id || "").includes(needle);
+          })
+          .slice(0, 12);
+      }
+
+      function closeLeagueSuggestions() {
+        state.highlightedSuggestion = -1;
+        els.liveSuggestions.hidden = true;
+        els.liveSearch.setAttribute("aria-expanded", "false");
+        els.liveSearch.removeAttribute("aria-activedescendant");
+      }
+
+      function highlightLeagueSuggestion(index) {
+        const buttons = [...els.liveSuggestions.querySelectorAll("[data-competition-id]")];
+        if (!buttons.length) return;
+        state.highlightedSuggestion = (index + buttons.length) % buttons.length;
+        buttons.forEach((button, buttonIndex) => {
+          const selected = buttonIndex === state.highlightedSuggestion;
+          button.setAttribute("aria-selected", selected ? "true" : "false");
+          if (selected) {
+            els.liveSearch.setAttribute("aria-activedescendant", button.id);
+            button.scrollIntoView({ block: "nearest" });
+          }
+        });
+      }
+
+      function renderLeagueSuggestions(query) {
+        const competitions = filterLeagueCompetitions(query);
+        state.highlightedSuggestion = -1;
+        if (!competitions.length) {
+          closeLeagueSuggestions();
+          return;
+        }
+
+        els.liveSuggestions.innerHTML = competitions.map((competition, index) => `
+          <button
+            class="suggestion-button"
+            id="league-suggestion-${index}"
+            type="button"
+            role="option"
+            aria-selected="false"
+            data-competition-id="${escapeHtml(competition.id)}"
+          >
+            <span class="suggestion-name">${escapeHtml(competition.name || `Competition ${competition.id}`)}</span>
+            <span class="suggestion-meta">${escapeHtml(String(competition.status || "UNKNOWN"))} · ID ${escapeHtml(competition.id)} · ${formatNumber(competition.nbParticipants || 0)} clubs</span>
+          </button>
+        `).join("");
+        els.liveSuggestions.hidden = false;
+        els.liveSearch.setAttribute("aria-expanded", "true");
+      }
+
+      function selectLeagueCompetition(competition) {
+        if (!competition) return;
+        state.selectedCompetitionId = String(competition.id);
+        els.liveSearch.value = competition.name || String(competition.id);
+        els.liveLoadButton.disabled = false;
+        closeLeagueSuggestions();
+      }
+
+      function updateLiveLoadButton() {
+        const query = els.liveSearch.value.trim();
+        const canSubmit = /^\d+$/.test(query)
+          || Boolean(state.selectedCompetitionId)
+          || query.length >= 2;
+        els.liveLoadButton.disabled = !canSubmit;
+      }
+
+      function resolveLiveCompetitionId() {
+        const query = els.liveSearch.value.trim();
+        if (/^\d+$/.test(query)) return query;
+        if (state.selectedCompetitionId) return state.selectedCompetitionId;
+        const exact = state.competitions.find((competition) =>
+          String(competition?.name || "").localeCompare(query, undefined, { sensitivity: "accent" }) === 0
+          || String(competition?.code || "").toLowerCase() === query.toLowerCase()
+        );
+        return exact ? String(exact.id) : null;
+      }
+
+      async function initializeLiveCompetitionSearch() {
+        const startingRun = state.liveLoadRun;
+        try {
+          const payload = await fetchLiveJson("/competitions?upcoming=true");
+          state.competitions = normalizeArray(payload, ["competitions", "items", "value"]);
+          const leagueCount = state.competitions.filter((competition) =>
+            String(competition?.type || competition?.subType || "").toUpperCase() === "LEAGUE"
+          ).length;
+          if (startingRun === state.liveLoadRun) setLiveStatus(
+            leagueCount
+              ? `${formatNumber(leagueCount)} current league competition${leagueCount === 1 ? "" : "s"} ready to search. Competition IDs can always be loaded directly.`
+              : "No named leagues are listed during this season transition. Enter a league competition ID directly.",
+            "idle"
+          );
+        } catch (error) {
+          state.competitions = [];
+          if (startingRun === state.liveLoadRun) setLiveStatus("The league name list is unavailable. You can still use your clubs or a numeric competition or club ID.", "error");
+        }
+        updateLiveLoadButton();
+      }
+
+      function renderLiveResults() {
+        const clubs = [...state.liveClubs]
+          .filter((club) => Number(club.playerCount) >= 11 && liveMetricValue(club) > 0)
+          .sort((a, b) => liveMetricValue(b) - liveMetricValue(a) || String(a.clubName).localeCompare(String(b.clubName)));
+        const competition = state.liveCompetition || {};
+
+        if (!clubs.length) {
+          els.liveResults.innerHTML = '<div class="empty">No clubs with at least 11 rated players were returned for this league.</div>';
+          return;
+        }
+
+        const strongest = clubs[0];
+        const mean = clubs.reduce((sum, club) => sum + liveMetricValue(club), 0) / clubs.length;
+        const retirements = aggregateRetirements(state.liveClubs);
+        const refreshedAt = new Date(state.liveFetchedAt || Date.now()).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+        const valueHeaders = state.liveOvrMode === "average"
+          ? { top11: "B11 avg", top16: "B16 avg", topFull: "Squad avg" }
+          : { top11: "B11 total", top16: "B16 total", topFull: "Squad total" };
+        const liveMetricKeys = availableMetricEntries(clubs).map(([metric]) => metric);
+        const metricMaximums = Object.fromEntries(
+          liveMetricKeys.map((metric) => [
+            metric,
+            Math.max(...clubs.map((club) => liveMetricValue(club, metric)), 1),
+          ])
+        );
+
+        els.liveResults.innerHTML = `
+          <div class="live-results-head">
+            <div>
+              <h3 class="league-title">${escapeHtml(competition.name || `Competition ${competition.id || ""}`)}</h3>
+              <div class="live-competition-meta">
+                <span class="meta-chip">ID ${escapeHtml(competition.id || state.selectedCompetitionId || "—")}</span>
+                <span class="meta-chip">${escapeHtml(competition.status || "UNKNOWN")}</span>
+                <span class="meta-chip">${formatNumber(clubs.length)} ranked clubs</span>
+                <span class="meta-chip">Fresh at ${escapeHtml(refreshedAt)}</span>
+              </div>
+            </div>
+            <div class="league-selectors">
+              <div class="metric-selector" aria-label="Live OVR calculation">
+                ${Object.entries(ovrModeLabels).map(([mode, label]) => `<button class="metric-button${mode === state.liveOvrMode ? " active" : ""}" type="button" data-live-ovr-mode="${escapeHtml(mode)}" aria-pressed="${mode === state.liveOvrMode}">${escapeHtml(label)}</button>`).join("")}
+              </div>
+              <div class="metric-selector" aria-label="Live ranking metric">
+                ${availableMetricEntries(clubs).map(([metric, label]) => `<button class="metric-button${metric === state.liveMetric ? " active" : ""}" type="button" data-live-metric="${escapeHtml(metric)}" aria-pressed="${metric === state.liveMetric}">${escapeHtml(label)}</button>`).join("")}
+              </div>
+            </div>
+          </div>
+
+          <div class="live-summary-grid" aria-label="Live league summary">
+            <div class="live-summary-card"><b>${formatNumber(clubs.length)}</b><span>Eligible clubs</span></div>
+            <div class="live-summary-card" title="${escapeHtml(strongest.clubName)}"><b>${escapeHtml(strongest.clubName)}</b><span>Strongest by ${escapeHtml(liveMetricLabel())}</span></div>
+            <div class="live-summary-card"><b>${escapeHtml(formatLiveStrength(liveMetricValue(strongest)))}</b><span>Highest ${escapeHtml(liveMetricLabel())}</span></div>
+            <div class="live-summary-card"><b>${escapeHtml(formatLiveStrength(mean))}</b><span>League mean</span></div>
+            <div class="live-summary-card retirement-none"><b>${escapeHtml(retirementSummaryValue(retirements, "none"))}</b><span>None retiring</span></div>
+            <div class="live-summary-card retirement-yellow"><b>${escapeHtml(retirementSummaryValue(retirements, "yellow"))}</b><span>Retiring in 3 seasons</span></div>
+            <div class="live-summary-card retirement-orange"><b>${escapeHtml(retirementSummaryValue(retirements, "orange"))}</b><span>Retiring in 2 seasons</span></div>
+            <div class="live-summary-card retirement-red"><b>${escapeHtml(retirementSummaryValue(retirements, "red"))}</b><span>Retiring in 1 season</span></div>
+          </div>
+
+          <div class="table-heading">
+            <div>
+              <h4 class="table-title">Strength field</h4>
+              <p class="panel-subtitle">Ranked by ${escapeHtml(liveMetricLabel())} from squad ratings fetched live for this search.</p>
+            </div>
+          </div>
+          <div class="table-wrap" data-wide-content>
+            <table class="table live-rankings-table">
+              <thead>
+                <tr>
+                  <th>#</th><th>Club</th><th>Division</th><th>Squad</th><th title="Not retiring within 3 seasons">None</th><th title="Retiring in 3 seasons">3Y</th><th title="Retiring in 2 seasons">2Y</th><th title="Retiring in 1 season">1Y</th>
+                  ${liveMetricKeys.map((metric) => `<th${metric === state.liveMetric ? ' aria-sort="descending"' : ""}>${escapeHtml(valueHeaders[metric])}</th>`).join("")}
+                </tr>
+              </thead>
+              <tbody>
+                ${clubs.map((club, index) => `
+                  <tr data-leader="${index === 0}">
+                    <td><span class="live-rank-number">${String(index + 1).padStart(2, "0")}</span></td>
+                    <td>
+                      <div class="live-club-ident">
+                        <span
+                          class="live-club-mark"
+                          style="--club-main:${escapeHtml(safeColor(club.mainColor, "#15212b"))};--club-secondary:${escapeHtml(safeColor(club.secondaryColor, "#72f6c1"))}"
+                          aria-hidden="true"
+                        >${escapeHtml(initials(club.clubName))}</span>
+                        <span><a class="team-name" href="https://app.playmfl.com/clubs/${encodeURIComponent(club.clubId)}/squad" target="_blank" rel="noopener">${escapeHtml(club.clubName)}</a>${retirementChips(club)}</span>
+                      </div>
+                    </td>
+                    <td>${escapeHtml(club.division || "—")}</td>
+                    <td>${formatNumber(club.playerCount)} players</td>
+                    <td class="retirement-cell retirement-none">${formatNumber(getRetirements(club).none)}</td>
+                    <td class="retirement-cell retirement-yellow">${formatNumber(getRetirements(club).yellow)}</td>
+                    <td class="retirement-cell retirement-orange">${formatNumber(getRetirements(club).orange)}</td>
+                    <td class="retirement-cell retirement-red">${formatNumber(getRetirements(club).red)}</td>
+                    ${liveMetricKeys.map((metric) => {
+                      const metricValue = liveMetricValue(club, metric);
+                      const metricFill = Math.max(5, Math.round((metricValue / metricMaximums[metric]) * 100));
+                      return `<td class="live-metric-cell${metric === state.liveMetric ? " active" : ""}">
+                        <span class="live-metric-stack">
+                          <b>${escapeHtml(formatLiveStrength(metricValue))}</b>
+                          <span class="live-metric-track" aria-hidden="true"><i style="--metric-fill:${metricFill}%"></i></span>
+                        </span>
+                      </td>`;
+                    }).join("")}
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      async function currentClubLeague(clubId, signal) {
+        const payload = await fetchLiveJson(`/clubs/${encodeURIComponent(clubId)}/competitions`, signal);
+        const leagues = normalizeArray(payload, ["competitions", "items", "value"])
+          .filter(c => String(c.type || c.subType).toUpperCase() === "LEAGUE" && ["LIVE", "UPCOMING", "PLANNED", "REGISTRATION"].includes(String(c.status).toUpperCase()))
+          .sort((a,b) => (a.status === "LIVE" ? 0 : 1) - (b.status === "LIVE" ? 0 : 1) || Number(b.startingDate || 0) - Number(a.startingDate || 0));
+        if (!leagues.length) throw new Error(`Club ${clubId} has no current or upcoming league. Search for a league name or competition ID instead.`);
+        return leagues[0];
+      }
+
+      async function initializeOwnedClubs() {
+        const select = document.getElementById("live-owned-club"), status = document.getElementById("live-owned-status");
+        const params = new URLSearchParams(location.search);
+        let wallet = params.get("wallet") || "";
+        if (!params.has("wallet")) { try { wallet = localStorage.getItem("agentHubWallet") || ""; } catch (_) {} }
+        if (!/^0x[a-f0-9]{16}$/i.test(wallet)) {
+          select.replaceChildren(new Option("Connect your wallet to see your clubs", ""));status.textContent = "Connect your wallet in The Agent Hub. League search remains available.";return;
+        }
+        try {
+          const payload = await fetchLiveJson(`/clubs?walletAddress=${encodeURIComponent(wallet)}`);
+          state.ownedClubs = normalizeArray(payload, ["clubs", "items", "value"])
+            .filter(row => !row.title || row.title === "MFL_OWNER")
+            .map(row => row.club || row).filter(club => club?.id)
+            .sort((a,b) => String(a.name).localeCompare(String(b.name)));
+          select.replaceChildren(new Option(state.ownedClubs.length ? "Choose a club to load its league" : "No owned clubs found", ""));
+          for (const club of state.ownedClubs) select.add(new Option(`${club.name} · ${club.id}`, String(club.id)));
+          select.disabled = !state.ownedClubs.length;status.textContent = state.ownedClubs.length ? "Selecting a club loads its current league." : "You can still search for any league below.";
+        } catch (_) {
+          select.replaceChildren(new Option("Owned clubs unavailable", ""));status.textContent = "Your clubs could not be loaded. League search remains available.";
+        }
+      }
+      document.getElementById("live-owned-club").addEventListener("change", event => {
+        if (!event.target.value) return;
+        closeLeagueSuggestions();loadLiveLeague(event.target.value, true);
+      });
+
+      async function loadLiveLeague(competitionId, fromClub = false) {
+        state.liveAbortController?.abort();
+        const controller = new AbortController();
+        state.liveAbortController = controller;
+        const runId = ++state.liveLoadRun;
+        state.liveCompetition = null;
+        state.liveClubs = [];
+        state.liveFailures = [];
+        els.liveResults.innerHTML = "";
+        els.liveLoadButton.disabled = true;
+        els.liveLoadButton.textContent = "Fetching live squad ratings…";
+        setLiveStatus(`Loading competition ${competitionId}…`, "loading");
+
+        try {
+          let competition;
+          if (fromClub) {
+            const league = await currentClubLeague(competitionId, controller.signal);
+            competitionId = String(league.id);
+            competition = await fetchLiveJson(`/competitions/${encodeURIComponent(competitionId)}`, controller.signal);
+          } else {
+            try { competition = await fetchLiveJson(`/competitions/${encodeURIComponent(competitionId)}`, controller.signal); }
+            catch (error) {
+              if (error.status !== 404) throw error;
+              let club;
+              try { club = await fetchLiveJson(`/clubs/${encodeURIComponent(competitionId)}`, controller.signal); }
+              catch (clubError) { if (clubError.status === 404) throw new Error(`No competition or club was found for ID ${competitionId}. Check the ID or search by league name.`);throw clubError; }
+              if (runId !== state.liveLoadRun) return;
+              setLiveStatus(`${club.name || 'Club '+competitionId} found. Loading its current league…`, "loading");
+              const league = await currentClubLeague(competitionId, controller.signal);
+              competitionId = String(league.id);
+              competition = await fetchLiveJson(`/competitions/${encodeURIComponent(competitionId)}`, controller.signal);
+            }
+          }
+          if (runId !== state.liveLoadRun) return;
+          state.selectedCompetitionId = String(competitionId);
+          els.liveSearch.value = competition.name || String(competitionId);
+          const competitionType = String(competition?.type || competition?.subType || "").toUpperCase();
+          if (competitionType && competitionType !== "LEAGUE") {
+            throw new Error("That competition is not a league. Choose a league competition name or ID.");
+          }
+
+          setLiveStatus(`Loading clubs in ${competition.name || `competition ${competitionId}`}…`, "loading");
+          const clubsPayload = await fetchLiveJson(`/competitions/${encodeURIComponent(competitionId)}/clubs`, controller.signal);
+          if (runId !== state.liveLoadRun) return;
+          const clubs = normalizeArray(clubsPayload, ["clubs", "participants", "items", "value"]);
+          if (!clubs.length) throw new Error("No clubs were returned for this league competition.");
+          if (clubs.length > MAX_LIVE_LEAGUE_CLUBS) {
+            throw new Error(`This competition contains ${formatNumber(clubs.length)} clubs and appears to be season-wide. Choose an individual league competition (up to ${MAX_LIVE_LEAGUE_CLUBS} clubs).`);
+          }
+
+          state.liveCompetition = competition;
+          const freshClubs = [];
+          for (const club of clubs) {
+            if (runId !== state.liveLoadRun || controller.signal.aborted) return;
+            setLiveStatus('Fetching current squads: ' + (freshClubs.length + 1) + ' / ' + clubs.length + ' clubs…', 'loading');
+            freshClubs.push(await fetchClubLiveStrength(club, controller.signal));
+          }
+          if (runId !== state.liveLoadRun || controller.signal.aborted) return;
+          state.liveClubs = freshClubs;
+          state.liveFetchedAt = new Date().toISOString();
+          renderLiveResults();
+          const rankedCount = freshClubs.filter(club => club.playerCount >= 11).length;
+          setLiveStatus('Loaded ' + formatNumber(rankedCount) + ' eligible clubs using fresh MFL squad ratings. Updated ' + new Date(state.liveFetchedAt).toLocaleTimeString() + '.', 'success');
+        } catch (error) {
+          if (error?.name === "AbortError" || runId !== state.liveLoadRun) return;
+          setLiveStatus(error.message || "The live league could not be loaded. Check the competition ID and try again.", "error");
+        } finally {
+          if (runId === state.liveLoadRun) {
+            els.liveLoadButton.textContent = "Run live scan";
+            updateLiveLoadButton();
+          }
+        }
+      }
+
+      function renderAll() {
+        state.ranked = eligibleResults().sort((a, b) => b.top11 - a.top11 || String(a.clubName).localeCompare(String(b.clubName)));
+        renderStats();
+        renderDivisionTabs();
+        renderCup();
+        renderLeague();
+      }
+
+      function setView(view) {
+        state.activeView = view;
+        window.AgentStrengthBenchmarks?.update(state.snapshot, state.activeMetric, state.activeOvrMode, state.snapshotSource || 'Published snapshot', view);
+        els.cupPanel.hidden = view !== "cup";
+        els.leaguePanel.hidden = view !== "league";
+        els.livePanel.hidden = view !== "live";
+        els.statsBar.hidden = view === "live";
+        els.search.hidden = view === "live";
+        document.querySelectorAll(".tab-button").forEach((button) => {
+          const active = button.dataset.view === view;
+          button.classList.toggle("active", active);
+          button.setAttribute("aria-selected", active ? "true" : "false");
+        });
+        if (view === "live" && !state.competitionsInitialized) {
+          state.competitionsInitialized = true;
+          initializeLiveCompetitionSearch();
+        }
+      }
+
+      document.querySelectorAll(".tab-button").forEach((button) => {
+        button.addEventListener("click", () => setView(button.dataset.view));
+      });
+
+      els.divisionTabs.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-division]");
+        if (!button) return;
+        state.activeDivision = Number(button.dataset.division);
+        renderDivisionTabs();
+        renderLeague();
+      });
+
+      els.leagueContent.addEventListener("click", (event) => {
+        const modeButton = event.target.closest("[data-ovr-mode]");
+        if (modeButton) {
+          state.activeOvrMode = modeButton.dataset.ovrMode;
+          renderLeague();
+          return;
+        }
+
+        const button = event.target.closest("[data-metric]");
+        if (!button) return;
+        state.activeMetric = button.dataset.metric;
+        renderCup();
+        renderLeague();
+      });
+
+      els.search.addEventListener("input", () => {
+        state.search = els.search.value.trim().toLowerCase();
+        renderCup();
+        renderLeague();
+      });
+
+      els.liveSearch.addEventListener("input", () => {
+        document.getElementById("live-owned-club").value = "";
+        const selected = state.competitions.find((competition) => String(competition.id) === String(state.selectedCompetitionId));
+        if (!selected || els.liveSearch.value.trim() !== String(selected.name || "").trim()) {
+          state.selectedCompetitionId = null;
+        }
+        updateLiveLoadButton();
+        renderLeagueSuggestions(els.liveSearch.value);
+      });
+
+      els.liveSearch.addEventListener("keydown", (event) => {
+        const suggestionsOpen = !els.liveSuggestions.hidden;
+        const buttons = [...els.liveSuggestions.querySelectorAll("[data-competition-id]")];
+        if (event.key === "ArrowDown" && suggestionsOpen) {
+          event.preventDefault();
+          highlightLeagueSuggestion(state.highlightedSuggestion + 1);
+        } else if (event.key === "ArrowUp" && suggestionsOpen) {
+          event.preventDefault();
+          highlightLeagueSuggestion(state.highlightedSuggestion - 1);
+        } else if (event.key === "Escape") {
+          closeLeagueSuggestions();
+        } else if (event.key === "Enter" && suggestionsOpen && state.highlightedSuggestion >= 0) {
+          event.preventDefault();
+          const button = buttons[state.highlightedSuggestion];
+          const competition = state.competitions.find((item) => String(item.id) === String(button?.dataset.competitionId));
+          selectLeagueCompetition(competition);
+        }
+      });
+
+      els.liveSuggestions.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-competition-id]");
+        if (!button) return;
+        const competition = state.competitions.find((item) => String(item.id) === String(button.dataset.competitionId));
+        selectLeagueCompetition(competition);
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!event.target.closest(".live-search-field")) closeLeagueSuggestions();
+      });
+
+      els.liveForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        let competitionId = resolveLiveCompetitionId();
+        if (!competitionId) {
+          const matches = filterLeagueCompetitions(els.liveSearch.value);
+          if (matches.length === 1) competitionId = String(matches[0].id);
+        }
+        if (!competitionId) {
+          setLiveStatus("Choose a league from the suggestions, or enter its numeric competition ID.", "error");
+          return;
+        }
+        state.selectedCompetitionId = competitionId;
+        closeLeagueSuggestions();
+        loadLiveLeague(competitionId);
+      });
+
+      els.liveResults.addEventListener("click", (event) => {
+        const modeButton = event.target.closest("[data-live-ovr-mode]");
+        if (modeButton) {
+          state.liveOvrMode = modeButton.dataset.liveOvrMode;
+          renderLiveResults();
+          return;
+        }
+        const metricButton = event.target.closest("[data-live-metric]");
+        if (!metricButton) return;
+        state.liveMetric = metricButton.dataset.liveMetric;
+        renderLiveResults();
+      });
+
+      async function loadStrengthSnapshot() {
+        const sources = [
+          { url: `${CLOUDFLARE_SNAPSHOT_URL}?v=${Date.now()}`, label: "Cloudflare live snapshot" },
+          { url: `${REMOTE_SNAPSHOT_URL}?v=${Date.now()}`, label: "Published GitHub snapshot" },
+          { url: LOCAL_SNAPSHOT_URL, label: "Bundled snapshot fallback" },
+        ];
+        let lastError = null;
+        for (const source of sources) {
+          try {
+            const response = await fetch(source.url, { cache: "no-store", signal: AbortSignal.timeout(10000) });
+            if (!response.ok) throw new Error(`Snapshot ${response.status}`);
+            const snapshot = await response.json();
+            if (!Array.isArray(snapshot?.results)) throw new Error("Snapshot results are invalid");
+            return { snapshot, sourceLabel: source.label };
+          } catch (error) {
+            lastError = error;
+          }
+        }
+        throw lastError || new Error("No strength snapshot is available");
+      }
+
+      const snapshotReady = loadStrengthSnapshot()
+        .then(({ snapshot, sourceLabel }) => {
+          state.snapshot = snapshot;
+          state.snapshotSource = sourceLabel;
+          const snapshotAgeDays = Math.floor((Date.now() - Date.parse(snapshot.updatedAt)) / 86400000);
+          els.lastUpdated.textContent = `${formatDate(snapshot.updatedAt)}${snapshotAgeDays > 7 ? ` · stale (${snapshotAgeDays} days old)` : ""}`;
+          els.sourceLine.textContent = `${sourceLabel} · ${formatNumber(snapshot.results.length)} clubs`;
+          els.status.hidden = true;
+          renderAll();
+        })
+        .catch((error) => {
+          els.status.hidden = false;
+          els.status.classList.add("error");
+          els.status.textContent = `Snapshot unavailable: ${error.message}`;
+        });
+      // Adopt complete Cloudflare snapshots while the tool stays open.
+      let snapshotRefreshBusy = false;
+      setInterval(async () => {
+        if (document.hidden || snapshotRefreshBusy) return;
+        snapshotRefreshBusy = true;
+        try {
+          const response = await fetch(CLOUDFLARE_SNAPSHOT_URL, { cache: "no-store", signal: AbortSignal.timeout(10000) });
+          if (!response.ok) return;
+          const snapshot = await response.json();
+          if (!Array.isArray(snapshot.results) || !snapshot.results.length || !(Date.parse(snapshot.updatedAt) > Date.parse(state.snapshot?.updatedAt || "1970-01-01"))) return;
+          state.snapshot = snapshot;
+          state.snapshotSource = "Cloudflare live snapshot";
+          els.lastUpdated.textContent = formatDate(snapshot.updatedAt);
+          els.sourceLine.textContent = `Cloudflare live snapshot · ${formatNumber(snapshot.results.length)} clubs`;
+          els.status.hidden = true;
+          renderAll();
+        } catch (_) { /* Keep the last complete snapshot during outages. */ }
+        finally { snapshotRefreshBusy = false; }
+      }, 60000);
+      setView("live");
+      initializeOwnedClubs();
+    })();
+  </script>
+<script src="benchmarks.js?v=2.1.2"></script>
+<script src="../tool-a11y.js?v=2.0.5"></script>
+</body>
+</html>

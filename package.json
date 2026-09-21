@@ -1,0 +1,18 @@
+{
+  "name": "cup-rankings-cloudflare",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "check": "tsc --noEmit",
+    "test": "vitest run && node tests/live-league.node.test.mjs",
+    "types": "wrangler types --strict-vars=false"
+  },
+  "devDependencies": {
+    "wrangler": "^4.135.0",
+    "typescript": "^5.9.3",
+    "vitest": "~4.1.0",
+    "@cloudflare/vitest-pool-workers": "0.22.0"
+  }
+}
