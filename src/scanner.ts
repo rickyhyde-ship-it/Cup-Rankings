@@ -1,6 +1,8 @@
 import { DurableObject } from 'cloudflare:workers';
 import { Club, Player, ScanState, DIVISIONS, PAGE_SIZE, REQUEST_INTERVAL_MS, RATE_LIMIT_COOLDOWN_MS, initialState, nextCallAt, rateLimited, resultsFor } from './model';
 
+const MFL_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36';
+
 export class RankingScanner extends DurableObject<Env> {
   private state!: ScanState;
   private busy = false;
@@ -201,7 +203,10 @@ export class RankingScanner extends DurableObject<Env> {
       s.requestTimes = s.requestTimes.filter(t=>t>now-60_000); s.requestTimes.push(now);
       s.nextRequestAt = now+REQUEST_INTERVAL_MS; s.requests++; s.totalRequests++; s.lastRequest = path;
       this.save(); // Reservation survives crashes and counts every attempted request.
-      const response = await fetch(`${this.env.MFL_API_BASE}${path}`,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(20_000)});
+      const response = await fetch(`${this.env.MFL_API_BASE}${path}`,{
+        headers:{Accept:'application/json','User-Agent':MFL_USER_AGENT},
+        signal:AbortSignal.timeout(20_000)
+      });
       const body = await response.text();
       // Honor a rate limit even when Pause/Stop arrived while the request was in flight.
       if (rateLimited(response.status,body)) {

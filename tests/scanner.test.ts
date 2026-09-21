@@ -34,8 +34,9 @@ describe('durable scanner',()=>{
     expect((await SELF.fetch('https://test/league-cup-strengths-data.json',{method:'POST'})).status).toBe(405);
   });
   it('retries failed requests without advancing and preserves the checkpoint on pause',async()=>{
-    const stub=fresh();await start(stub);vi.spyOn(globalThis,'fetch').mockImplementation(async()=>new Response('Unavailable',{status:503}));
+    const stub=fresh();await start(stub);const request=vi.spyOn(globalThis,'fetch').mockImplementation(async()=>new Response('Unavailable',{status:503}));
     await step(stub);let state=await stub.status();expect(state.requests).toBe(1);expect(state.retries).toBe(1);expect(state.divisionIndex).toBe(0);expect(state.cooldownUntil).toBe(0);
+    expect(new Headers(request.mock.calls[0][1]?.headers).get('User-Agent')).toMatch(/^Mozilla\/5\.0 .*Chrome\//);
     await stub.control('pause');await runInDurableObject(stub,instance=>instance.alarm());expect((await stub.status()).requests).toBe(1);
     await runInDurableObject(stub,async(instance,ctx)=>{await instance.control('start');await ctx.storage.deleteAlarm();});
     state=await stub.status();expect(state.cycle).toBe(1);expect(state.mode).toBe('running');
